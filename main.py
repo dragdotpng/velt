@@ -107,14 +107,14 @@ class Notif:
             notification.application_name = self.title
             notification.message = message
             notification.icon = "assets/icon.ico"
-            notification.audio = "assets/notif.mp3"
+            notification.audio = "assets/notif.wav"
             notification.send()
 
 def downloadAssets():
     assets = [
         "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
         "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico",
-        "https://raw.githubusercontent.com/VeltBot/assets/main/notif.mp3"
+        "https://raw.githubusercontent.com/VeltBot/assets/main/notif.wav"
     ]
     for asset in assets:
         name = asset.split("/")[-1]
