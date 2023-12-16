@@ -8,7 +8,6 @@ import logging
 import discord
 import pystyle
 import random
-import plyer
 import math
 import time
 import json
@@ -16,10 +15,11 @@ import sys
 import os
 import re
 
-from PIL import Image, ImageDraw, ImageFont
-from discord.ext import commands
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from aiohttp import ClientSession
 from colorama import Fore, Style
+from discord.ext import commands
+from notifypy import Notify
 from discord import File
 from io import BytesIO
 
@@ -31,18 +31,6 @@ os.system("cls")
 
 def prettyprint(text):
     print(f"[{Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
-
-
-class Notify:
-    def __init__(self):
-        self.title = "Velt"
-
-    def send(self, message):
-        if not os.path.exists("icon.ico"):
-            with open("icon.ico", "wb") as f:
-                f.write(requests.get("https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.ico").content)
-
-        plyer.notification.notify(title=self.title, message=message, app_name=self.title, app_icon="icon.ico", timeout=5)
 
 
 class Config:
@@ -59,6 +47,7 @@ class Config:
             "ping": True
         }
         self.embed = {
+            "image": "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
             "footer": ""
         }
 
@@ -107,7 +96,35 @@ class Config:
 config = Config()
 config.check()
 
-notif = Notify()
+class Notif:
+    def __init__(self):
+        self.title = "Velt"
+
+    def send(self, message):
+        if config.notify == True:
+            notification = Notify()
+            notification.title = self.title
+            notification.application_name = self.title
+            notification.message = message
+            notification.icon = "assets/icon.ico"
+            notification.send()
+
+def downloadAssets():
+    assets = [
+        "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
+        "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico"
+    ]
+    for asset in assets:
+        name = asset.split("/")[-1]
+        os.makedirs('assets', exist_ok=True)
+        if not os.path.exists(f"assets/{name}"):
+            with open(f"assets/{name}", "wb") as f:
+                prettyprint(f"Downloading {name}")
+                f.write(requests.get(asset).content)
+
+downloadAssets()
+
+notif = Notif()
 
 velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
 
@@ -216,6 +233,17 @@ def generate_image(title, description, footer):
     image = Image.new('RGB', (image_width, image_height), colors['background'])
     draw = ImageDraw.Draw(image)
 
+    small_image = Image.open('velt_big.png')
+
+    mask = Image.new('L', small_image.size, 0)
+    draw_mask = ImageDraw.Draw(mask)
+    draw_mask.ellipse((0, 0) + small_image.size, fill=255)
+
+    small_image = ImageOps.fit(small_image, mask.size, centering=(0.5, 0.5))
+    small_image.putalpha(mask)
+
+    image.paste(small_image, (image_width - small_image.size[0], 0), small_image)
+
     title_font_size = int(image_width * 0.089)
     title_font = ImageFont.truetype(f'Metropolis-Bold.otf', title_font_size)
 
@@ -246,7 +274,7 @@ def generate_image(title, description, footer):
     draw.text((title_x, title_y), title, font=title_font, fill=colors['text'])
 
     line_y = title_y + title_height + title_padding
-    draw.line([(title_x, line_y), (image_width - title_x, line_y)], fill=colors['primary'], width=border_width)
+    draw.line([(title_x, line_y), (image_width - title_x, line_y)], fill=colors['accent'], width=border_width)
 
     description_x = title_padding
     for line in description_lines:
@@ -409,17 +437,17 @@ async def cat(ctx):
         "x-api-key": random.choice(keys)
     }
     r = requests.get(url, headers=headers)
-    await ctx.send(r.json()["url"])
+    await ctx.send(r.json()[0]["url"])
 
 @velt.command(brief="fun")
 async def dog(ctx):
     url = "https://api.thedogapi.com/v1/images/search"
-    keys = ["live_34iyZhLvb3QtsUMXR7fQBHZeZlwqmAo9CqUrrXOwsgXL75vXGgY8HESwCzm1NYXz", "live_Jzh4OOisuIePhKMvWRG4lsAAzh5jYHZSRqdOwxpWUVYYvaz19BchYbubwudQGUof"]
+    keys = ["live_yL41nnFF0U8TtCuyMemFxKWWMnejHRXL9PDt1coakRYqhooZWtXXHPpVZlNEqVUC"]
     headers = {
         "x-api-key": random.choice(keys)
     }
     r = requests.get(url, headers=headers)
-    await ctx.send(r.json()["url"])
+    await ctx.send(r.json()[0]["url"])
 
 
 #  ::::::::  :::::::::: ::::    ::: 
