@@ -183,6 +183,7 @@ async def on_message_delete(message):
     if config.log["ghostping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
                 notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
 
 @velt.event
@@ -190,6 +191,7 @@ async def on_message(message):
     if config.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
                 notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
     await velt.process_commands(message)
 
@@ -244,7 +246,7 @@ def generate_image(title, description, footer):
     draw.text((title_x, title_y), title, font=title_font, fill=colors['text'])
 
     line_y = title_y + title_height + title_padding
-    draw.line([(title_x, line_y), (image_width - title_x, line_y)], fill=colors['accent'], width=border_width)
+    draw.line([(title_x, line_y), (image_width - title_x, line_y)], fill=colors['primary'], width=border_width)
 
     description_x = title_padding
     for line in description_lines:
@@ -389,8 +391,8 @@ async def restart(ctx):
 
 @velt.command(brief="fun")
 async def iq(ctx, user: discord.User):
-    iq = random.randint(0, 200)
-    await veltSend(ctx, "IQ", f"{user.name} has a IQ of {iq}")
+    iq = random.randint(40, 160)
+    await veltSend(ctx, "IQ", f"{user.name} has an IQ of {iq}")
 
 
 @velt.command(brief="fun")
@@ -402,10 +404,22 @@ async def dick(ctx, user: discord.User):
 @velt.command(brief="fun")
 async def cat(ctx):
     url = "https://api.thecatapi.com/v1/images/search"
-    r = requests.get(url)
+    keys = ["live_34iyZhLvb3QtsUMXR7fQBHZeZlwqmAo9CqUrrXOwsgXL75vXGgY8HESwCzm1NYXz", "live_Jzh4OOisuIePhKMvWRG4lsAAzh5jYHZSRqdOwxpWUVYYvaz19BchYbubwudQGUof"]
+    headers = {
+        "x-api-key": random.choice(keys)
+    }
+    r = requests.get(url, headers=headers)
     await ctx.send(r.json()["url"])
 
-
+@velt.command(brief="fun")
+async def dog(ctx):
+    url = "https://api.thedogapi.com/v1/images/search"
+    keys = ["live_34iyZhLvb3QtsUMXR7fQBHZeZlwqmAo9CqUrrXOwsgXL75vXGgY8HESwCzm1NYXz", "live_Jzh4OOisuIePhKMvWRG4lsAAzh5jYHZSRqdOwxpWUVYYvaz19BchYbubwudQGUof"]
+    headers = {
+        "x-api-key": random.choice(keys)
+    }
+    r = requests.get(url, headers=headers)
+    await ctx.send(r.json()["url"])
 
 
 #  ::::::::  :::::::::: ::::    ::: 
