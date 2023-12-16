@@ -42,7 +42,7 @@ class Notify:
             with open("icon.ico", "wb") as f:
                 f.write(requests.get("https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.ico").content)
 
-        plyer.notification.notify(title=self.title, message=message, app_name=self.title, app_icon="icon.ico")
+        plyer.notification.notify(title=self.title, message=message, app_name=self.title, app_icon="icon.ico", timeout=5)
 
 
 class Config:
@@ -51,8 +51,13 @@ class Config:
         self.prefix = ""
         self.mode = "image"
         self.delete_after = 15
-        logging = "console"
+        self.logging = "console"
         self.rpc = True
+        self.notify = True
+        self.log = {
+            "ghostping": True,
+            "ping": True
+        }
         self.embed = {
             "footer": ""
         }
@@ -65,6 +70,13 @@ class Config:
     "prefix": "",
     "mode": "image",
     "delete_after": 15,
+    "logging": "channel",
+    "rpc": true,
+    "notify": true,
+    "log": {
+        "ghostping": true,
+        "ping": true
+    },
     "embed": {
         "footer": "Velt"
     }
@@ -166,6 +178,20 @@ async def on_command_error(ctx, error):
     elif config.logging == "channel":
         await veltSend(ctx, "Error", f"{error}")
 
+@velt.event
+async def on_message_delete(message):
+    if config.log["ghostping"] == True:
+        if message.mentions:
+            if message.mentions.__contains__(velt.user):
+                notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
+
+@velt.event
+async def on_message(message):
+    if config.log["ping"] == True:
+        if message.mentions:
+            if message.mentions.__contains__(velt.user):
+                notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
+    await velt.process_commands(message)
 
 
 def generate_image(title, description, footer):
@@ -349,6 +375,7 @@ async def imagemode(ctx):
 
 @velt.command(brief="bot")
 async def restart(ctx):
+    await ctx.message.delete()
     os.execv(sys.executable, ['python'] + sys.argv)
 
 # :::::::::: :::    ::: ::::    ::: 
