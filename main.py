@@ -41,9 +41,8 @@ class Config:
         self.mode = "image"
         self.delete_after = 15
         logging = "console"
+        self.rpc = True
         self.embed = {
-            "title": "",
-            "description": "",
             "footer": ""
         }
 
@@ -103,6 +102,7 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     SsS     SSSSSsSS;:' SSSSSsSS;:'       SSSSS       
 """
     global start_time
+    global rpc
     ################## thanks HannahHaven
     url = "https://discord.com/api/v10/users/@me/relationships"
     r = requests.get(url, headers={"Authorization": config.token})
@@ -117,8 +117,8 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     zamn = f"""
 [-] Friend count: {txtf}
 [-] Guild count: {txtg}
-[-] Prefix: {config.prefix}
-[-] Started at: {time.strftime('%H:%M:%S')}
+[-] Prefix: {Fore.LIGHTMAGENTA_EX}{config.prefix}{Style.RESET_ALL}
+[-] Started at: {Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}
 """.replace("[-]", f"[{Fore.LIGHTMAGENTA_EX}-{Style.RESET_ALL}]")
     start_time = time.time()
     print(Fore.LIGHTMAGENTA_EX)
@@ -126,14 +126,17 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     print(Style.RESET_ALL)
     print(zamn)
     cmds = len(velt.commands)
-    rpc = pypresence.AioPresence("1185635065024233652")
+    rpc = pypresence.AioPresence("1185652637966811146")
     await rpc.connect()
     prettyprint("RPC connected")
-    await rpc.update(details=str(cmds) + " commands", large_image="velt", large_text="Velt SB", start=start_time)
-    prettyprint(f"Logged in as {velt.user.name} ({velt.user.id})")
+    await rpc.update(details=str(cmds) + " commands", large_image="velt", large_text="Velt", start=start_time)
+    prettyprint(f"Logged in as {velt.user.name} ({Fore.LIGHTMAGENTA_EX}{velt.user.id}{Style.RESET_ALL})")
 
 @velt.event
 async def on_command(ctx):
+    global rpc
+    last_command = ctx.message.content[1:].split(" ")[0]
+    await rpc.update(state="Last command used: " + last_command, details=str(len(velt.commands)) + " commands", large_image="velt", large_text="Velt", start=start_time)
     prettyprint(f"Command: {ctx.message.content[1:]}")
     try:
         await ctx.message.delete()
@@ -356,6 +359,15 @@ async def dick(ctx, user: discord.User):
     size = random.randint(1,12)
     pp = "8" + "=" * size + "D"
     await veltSend(ctx, "dick", f"{user.name}'s dick is {size} inches long\n{pp}")
+
+@velt.command(brief="fun")
+async def cat(ctx):
+    url = "https://api.thecatapi.com/v1/images/search"
+    r = requests.get(url)
+    await ctx.send(r.json()["url"])
+
+
+
 
 #  ::::::::  :::::::::: ::::    ::: 
 # :+:    :+: :+:        :+:+:   :+: 
