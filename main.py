@@ -1,3 +1,4 @@
+import pypresence
 import requests
 import textwrap
 import warnings
@@ -5,6 +6,7 @@ import asyncio
 import difflib
 import logging
 import discord
+import pystyle
 import random
 import math
 import time
@@ -27,7 +29,7 @@ os.system("pip install Pillow==9.4.0")
 os.system("cls")
 
 def prettyprint(text):
-    print(f"[{Fore.LIGHTBLUE_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
+    print(f"[{Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
 
 
 
@@ -54,7 +56,7 @@ class Config:
     "mode": "image",
     "delete_after": 15,
     "embed": {
-        "footer": "Nebula"
+        "footer": "Velt"
     }
 }
 """
@@ -85,19 +87,20 @@ config.check()
 
 
 
-nebula = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
+velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
 
-@nebula.event
+@velt.event
 async def on_ready():
-    os.system("title Nebula")
-    banner = """
-::::    ::: :::::::::: :::::::::  :::    ::: :::            :::     
-:+:+:   :+: :+:        :+:    :+: :+:    :+: :+:          :+: :+:   
-:+:+:+  +:+ +:+        +:+    +:+ +:+    +:+ +:+         +:+   +:+  
-+#+ +:+ +#+ +#++:++#   +#++:++#+  +#+    +:+ +#+        +#++:++#++: 
-+#+  +#+#+# +#+        +#+    +#+ +#+    +#+ +#+        +#+     +#+ 
-#+#   #+#+# #+#        #+#    #+# #+#    #+# #+#        #+#     #+# 
-###    #### ########## #########   ########  ########## ###     ### 
+    os.system("title Velt")
+    banner = """                                           
+.sSSS s.    .sSSSSs.    SSSSS       .sSSSSSSSSSSSSSs. 
+S SSS SSSs. S SSSSSSSs. S SSS       SSSSS S SSS SSSSS 
+S  SS SSSSS S  SS SSSS' S  SS       SSSSS S  SS SSSSS 
+S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:' 
+ S::S SSSS  S:::SSSS    S:::S             S:::S       
+  S;S SSS   S;;;S       S;;;S             S;;;S       
+   SS SS    S%%%S SSSSS S%%%S SSSSS       S%%%S       
+    SsS     SSSSSsSS;:' SSSSSsSS;:'       SSSSS       
 """
     global start_time
     ################## thanks HannahHaven
@@ -109,20 +112,27 @@ async def on_ready():
     blocked = [user for user in decode if user.get('type') == 2]
     txtf = f"{Fore.GREEN}{len(friends)}{Style.RESET_ALL}/{Fore.YELLOW}{len(pending)}{Style.RESET_ALL}/{Fore.RED}{len(blocked)}{Style.RESET_ALL}"
     ##################
-    guilds = len(nebula.guilds)
-    txtg = f"{Fore.LIGHTBLUE_EX}{guilds}{Style.RESET_ALL}"
+    guilds = len(velt.guilds)
+    txtg = f"{Fore.LIGHTMAGENTA_EX}{guilds}{Style.RESET_ALL}"
     zamn = f"""
 [-] Friend count: {txtf}
 [-] Guild count: {txtg}
 [-] Prefix: {config.prefix}
 [-] Started at: {time.strftime('%H:%M:%S')}
-""".replace("[-]", f"[{Fore.LIGHTBLUE_EX}-{Style.RESET_ALL}]")
+""".replace("[-]", f"[{Fore.LIGHTMAGENTA_EX}-{Style.RESET_ALL}]")
     start_time = time.time()
-    print(Fore.LIGHTBLUE_EX + banner + Style.RESET_ALL)
+    print(Fore.LIGHTMAGENTA_EX)
+    print(pystyle.Center.XCenter(banner))
+    print(Style.RESET_ALL)
     print(zamn)
-    prettyprint(f"Logged in as {nebula.user.name} ({nebula.user.id})")
+    cmds = len(velt.commands)
+    rpc = pypresence.AioPresence("1185635065024233652")
+    await rpc.connect()
+    prettyprint("RPC connected")
+    await rpc.update(details=str(cmds) + " commands", large_image="velt", large_text="Velt SB", start=start_time)
+    prettyprint(f"Logged in as {velt.user.name} ({velt.user.id})")
 
-@nebula.event
+@velt.event
 async def on_command(ctx):
     prettyprint(f"Command: {ctx.message.content[1:]}")
     try:
@@ -130,7 +140,7 @@ async def on_command(ctx):
     except:
         pass
 
-@nebula.event
+@velt.event
 async def on_command_error(ctx, error):
     try:
         await ctx.message.delete()
@@ -139,7 +149,7 @@ async def on_command_error(ctx, error):
     if config.logging == "console":
         prettyprint(f"{error}")
     elif config.logging == "channel":
-        await nebulaSend(ctx, "Error", f"{error}")
+        await veltSend(ctx, "Error", f"{error}")
 
 
 
@@ -229,7 +239,7 @@ def generate_image(title, description, footer):
     return image_bytes
 
 
-async def nebulaSend(ctx, title, description):
+async def veltSend(ctx, title, description):
     config.check()
     footer = config.embed["footer"]
     mode = "image"
@@ -250,10 +260,17 @@ async def nebulaSend(ctx, title, description):
         msg = await ctx.send(f"```ini\n{line1}\n```\n`{line2}`\n\n```ini\n{line3}\n```", delete_after=config.delete_after)
         return msg
 
+# :::    ::: ::::::::::: ::::::::::: :::        
+# :+:    :+:     :+:         :+:     :+:        
+# +:+    +:+     +:+         +:+     +:+        
+# +#+    +:+     +#+         +#+     +#+        
+# +#+    +#+     +#+         +#+     +#+        
+# #+#    #+#     #+#         #+#     #+#        
+#  ########      ###     ########### ########## 
 
-@nebula.command(brief="utility")
+@velt.command(brief="utility")
 async def ping(ctx):
-    ping = nebula.latency.__round__(3)
+    ping = velt.latency.__round__(3)
     ping = round(ping * 1000)
     google = "https://www.google.com"
     discord_api = "https://discord.com/api/v10/gateway"
@@ -263,7 +280,7 @@ async def ping(ctx):
     r2 = r2.elapsed.total_seconds()
     r1 = round(r1 * 1000)
     r2 = round(r2 * 1000)
-    await nebulaSend(ctx, "Ping", f"> Nebula: {ping}ms\n> Google: {r1}ms\n> Discord API: {r2}ms")
+    await veltSend(ctx, "Ping", f"> Velt: {ping}ms\n> Google: {r1}ms\n> Discord API: {r2}ms")
 
 
 def format_uptime(uptime):
@@ -271,64 +288,87 @@ def format_uptime(uptime):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
-@nebula.command(brief="utility")
+@velt.command(brief="utility")
 async def uptime(ctx):
     uptime_seconds = int(time.time() - start_time)
     formatted_uptime = format_uptime(uptime_seconds)
-    await nebulaSend(ctx, "Uptime", f"> {formatted_uptime}")
+    await veltSend(ctx, "Uptime", f"> {formatted_uptime}")
 
-@nebula.command(brief="utility")
+@velt.command(brief="utility")
 async def info(ctx):
-    cmds = len(nebula.commands)
-    await nebulaSend(ctx, "Info", f"""Name: {nebula.user.name}
-ID: {nebula.user.id}
+    cmds = len(velt.commands)
+    await veltSend(ctx, "Info", f"""Name: {velt.user.name}
+ID: {velt.user.id}
 Uptime: {format_uptime(int(time.time() - start_time))}
 Prefix: {config.prefix}
 Mode: {config.mode}
 Commands: {cmds}
 """)
     
+# :::::::::   ::::::::  ::::::::::: 
+# :+:    :+: :+:    :+:     :+:     
+# +:+    +:+ +:+    +:+     +:+     
+# +#++:++#+  +#+    +:+     +#+     
+# +#+    +#+ +#+    +#+     +#+     
+# #+#    #+# #+#    #+#     #+#     
+# #########   ########      ###     
 
-@nebula.command(brief="bot")
+
+@velt.command(brief="bot")
 async def prefix(ctx, prefix):
     config.setk("prefix", prefix)
-    await nebulaSend(ctx, "Success", f"Prefix set to {prefix}")
+    await veltSend(ctx, "Success", f"Prefix set to {prefix}")
 
 
-@nebula.command(brief="bot")
+@velt.command(brief="bot")
 async def textmode(ctx):
     config.setk("mode", "text")
-    await nebulaSend(ctx, "Success", "Mode set to text")
+    await veltSend(ctx, "Success", "Mode set to text")
 
 
-@nebula.command(brief="bot")
+@velt.command(brief="bot")
 async def imagemode(ctx):
     config.setk("mode", "image")
-    await nebulaSend(ctx, "Success", "Mode set to image")
+    await veltSend(ctx, "Success", "Mode set to image")
 
 
-@nebula.command(brief="bot")
+@velt.command(brief="bot")
 async def restart(ctx):
-    await nebulaSend(ctx, "Success", "Restarting...")
     os.execv(sys.executable, ['python'] + sys.argv)
 
+# :::::::::: :::    ::: ::::    ::: 
+# :+:        :+:    :+: :+:+:   :+: 
+# +:+        +:+    +:+ :+:+:+  +:+ 
+# :#::+::#   +#+    +:+ +#+ +:+ +#+ 
+# +#+        +#+    +#+ +#+  +#+#+# 
+# #+#        #+#    #+# #+#   #+#+# 
+# ###         ########  ###    #### 
 
-@nebula.command(brief="fun")
+
+@velt.command(brief="fun")
 async def iq(ctx, user: discord.User):
     iq = random.randint(0, 200)
-    await nebulaSend(ctx, "IQ", f"{user.name} has a IQ of {iq}")
+    await veltSend(ctx, "IQ", f"{user.name} has a IQ of {iq}")
 
 
-@nebula.command(brief="fun")
+@velt.command(brief="fun")
 async def dick(ctx, user: discord.User):
     size = random.randint(1,12)
     pp = "8" + "=" * size + "D"
-    await nebulaSend(ctx, "dick", f"{user.name}'s dick is {size} inches long\n{pp}")
+    await veltSend(ctx, "dick", f"{user.name}'s dick is {size} inches long\n{pp}")
+
+#  ::::::::  :::::::::: ::::    ::: 
+# :+:    :+: :+:        :+:+:   :+: 
+# +:+        +:+        :+:+:+  +:+ 
+# :#:        +#++:++#   +#+ +:+ +#+ 
+# +#+   +#+# +#+        +#+  +#+#+# 
+# #+#    #+# #+#        #+#   #+#+# 
+#  ########  ########## ###    #### 
 
 
-@nebula.command(brief="general")
+@velt.command(brief="general")
 async def search(ctx, query):
-    commands = [(command.name, command.description, command.brief) for command in nebula.walk_commands() if
+    commands = [(command.name, command.description, command.brief) for command in velt.walk_commands() if
                 command.brief is not None]
     matches = []
     for name, description, category in commands:
@@ -342,14 +382,14 @@ async def search(ctx, query):
         end_index = start_index + 13
         success_message = "\n".join(command_strings[start_index:end_index])
         success_message += f"\n\nPage {page}/{num_pages}"
-        await nebulaSend(ctx, query, success_message)
+        await veltSend(ctx, query, success_message)
     else:
-        await nebulaSend(ctx, query, "No matches found")
+        await veltSend(ctx, query, "No matches found")
 
 
-@nebula.command()
+@velt.command()
 async def help(ctx, input: str = None, page: int = 1):
-    commands = [(command.name, command.description, command.brief) for command in nebula.walk_commands() if
+    commands = [(command.name, command.description, command.brief) for command in velt.walk_commands() if
                 command.brief is not None]
     categories = {}
     for name, description, category in commands:
@@ -365,25 +405,25 @@ async def help(ctx, input: str = None, page: int = 1):
         for category in categories.keys():
             category_strings.append(f"> {category}")
         success_message = "\n".join(category_strings)
-        await nebulaSend(ctx, "Categories", success_message)
+        await veltSend(ctx, "Categories", success_message)
     elif input in categories:
         command_strings = [f"> {name}" for name, description in sorted(categories[input])]
         num_pages = math.ceil(len(command_strings) / 13)
         if page < 1 or page > num_pages:
-            await nebulaSend(ctx, "Error", "Invalid page number")
+            await veltSend(ctx, "Error", "Invalid page number")
             return
         start_index = (page - 1) * 13
         end_index = start_index + 13
         success_message = "\n".join(command_strings[start_index:end_index])
         success_message += f"\n\nPage {page}/{num_pages}"
-        await nebulaSend(ctx, "Commands", success_message)
+        await veltSend(ctx, "Commands", success_message)
     else:
         matches = difflib.get_close_matches(input, [command[0] for command in commands])
         if matches:
-            command = nebula.get_command(matches[0])
+            command = velt.get_command(matches[0])
             success_message = f"""Command: {command.name}
 > Aliases: {', '.join(command.aliases) if command.aliases else 'No aliases'}"""
-            await nebulaSend(ctx, "Success", success_message)
+            await veltSend(ctx, "Success", success_message)
 
 
 # Monkey patching...
@@ -416,7 +456,7 @@ async def gbn(session: ClientSession) -> int:  # Thank you Discord-S.C.U.M
 discord.utils._get_build_number = gbn
 
 try:
-    nebula.run(config.token, log_handler=None)
+    velt.run(config.token, log_handler=None)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
     config.setk("token", input("> "))
