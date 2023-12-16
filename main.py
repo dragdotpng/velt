@@ -47,7 +47,7 @@ class Config:
             "ping": True
         }
         self.embed = {
-            "image": "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
+            "image": "",
             "footer": ""
         }
 
@@ -107,12 +107,14 @@ class Notif:
             notification.application_name = self.title
             notification.message = message
             notification.icon = "assets/icon.ico"
+            notification.audio = "assets/notif.mp3"
             notification.send()
 
 def downloadAssets():
     assets = [
         "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
-        "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico"
+        "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico",
+        "https://raw.githubusercontent.com/VeltBot/assets/main/notif.mp3"
     ]
     for asset in assets:
         name = asset.split("/")[-1]
@@ -224,7 +226,7 @@ def generate_image(title, description, footer):
 
     image_width = 600
     image_height = 800
-    title_padding = 40
+    title_padding = 45
     description_padding = 7.5  # reduced padding between lines
     footer_padding = 20
     corner_radius = 50
@@ -233,16 +235,17 @@ def generate_image(title, description, footer):
     image = Image.new('RGB', (image_width, image_height), colors['background'])
     draw = ImageDraw.Draw(image)
 
-    small_image = Image.open('velt_big.png')
+    #small_image = Image.open(requests.get(config.embed["image"], stream=True).raw)
+    #small_image = small_image.resize((int(image_width * 0.2), int(image_width * 0.2)))
 
-    mask = Image.new('L', small_image.size, 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.ellipse((0, 0) + small_image.size, fill=255)
+    #mask = Image.new('L', small_image.size, 0)
+    #draw_mask = ImageDraw.Draw(mask)
+    #draw_mask.ellipse((0, 0) + small_image.size, fill=255)
 
-    small_image = ImageOps.fit(small_image, mask.size, centering=(0.5, 0.5))
-    small_image.putalpha(mask)
+    #small_image = ImageOps.fit(small_image, mask.size, centering=(0.5, 0.5))
+    #small_image.putalpha(mask)
 
-    image.paste(small_image, (image_width - small_image.size[0], 0), small_image)
+    #image.paste(small_image, (image_width - small_image.size[0] - 25, 15), small_image)
 
     title_font_size = int(image_width * 0.089)
     title_font = ImageFont.truetype(f'Metropolis-Bold.otf', title_font_size)
