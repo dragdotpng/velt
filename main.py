@@ -8,6 +8,7 @@ import logging
 import discord
 import pystyle
 import random
+import plyer
 import math
 import time
 import json
@@ -32,6 +33,16 @@ def prettyprint(text):
     print(f"[{Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
 
 
+class Notify:
+    def __init__(self):
+        self.title = "Velt"
+
+    def send(self, message):
+        if not os.path.exists("icon.ico"):
+            with open("icon.ico", "wb") as f:
+                f.write(requests.get("https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.ico").content)
+
+        plyer.notification.notify(title=self.title, message=message, app_name=self.title, app_icon="icon.ico")
 
 
 class Config:
@@ -84,13 +95,14 @@ class Config:
 config = Config()
 config.check()
 
-
+notif = Notify()
 
 velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
 
 @velt.event
 async def on_ready():
     os.system("title Velt")
+    notif.send("Logged in")
     banner = """                                           
 .sSSS s.    .sSSSSs.    SSSSS       .sSSSSSSSSSSSSSs. 
 S SSS SSSs. S SSSSSSSs. S SSS       SSSSS S SSS SSSSS 
@@ -160,9 +172,9 @@ def generate_image(title, description, footer):
     colors = {
         'text': (255, 255, 255),
         'background': (25, 25, 25),
-        'primary': (143, 179, 255),
+        'primary': (255,188,207),
         'secondary': (10, 10, 10),
-        'accent': (58, 146, 197)
+        'accent': (158, 41, 74)
     }
 
     image_width = 600
