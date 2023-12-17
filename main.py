@@ -72,7 +72,8 @@ class Config:
     "notify": true,
     "log": {
         "ghostping": true,
-        "ping": true
+        "ping": true,
+        "messages": true
     },
     "embed": {
         "footer": "Velt"
@@ -138,6 +139,7 @@ downloadAssets()
 notif = Notif()
 
 velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
+deleted_messages = []
 
 @velt.event
 async def on_ready():
@@ -214,6 +216,14 @@ async def on_message_delete(message):
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
                 asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})"))
+    if config.log["messages"] == True:
+        msg_object = {
+            "content": message.content,
+            "author": message.author.name,
+            "channel": message.channel.id,
+            "guild": message.guild.id
+        }
+        deleted_messages.append(msg_object)
 
 @velt.event
 async def on_message(message):
@@ -389,6 +399,16 @@ Mode: {config.mode}
 Commands: {cmds}
 """)
     
+
+@velt.command(brief="utility")
+async def snipe(ctx, channel_id: int = None):
+    if channel_id == None:
+        channel_id = ctx.channel.id
+    for msg in deleted_messages:
+        if msg["channel"] == channel_id:
+            await veltSend(ctx, "Snipe", f"> Author: {msg['author']}\n> Content: {msg['content']}")
+            return
+
 # :::::::::   ::::::::  ::::::::::: 
 # :+:    :+: :+:    :+:     :+:     
 # +:+    +:+ +:+    +:+     +:+     
