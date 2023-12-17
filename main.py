@@ -125,7 +125,9 @@ def downloadAssets():
     assets = [
         "https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.png",
         "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico",
-        "https://raw.githubusercontent.com/VeltBot/assets/main/notif.wav"
+        "https://raw.githubusercontent.com/VeltBot/assets/main/notif.wav",
+        "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-Regular.otf",
+        "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-Bold.otf"
     ]
     for asset in assets:
         name = asset.split("/")[-1]
