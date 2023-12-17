@@ -410,6 +410,18 @@ async def snipe(ctx, channel_id: int = None):
             await veltSend(ctx, "Snipe", f"> Author: {msg['author']}\n> Content: {msg['content']}")
             return
 
+@velt.command(brief="utility")
+async def snipeall(ctx, channel_id: int = None):
+    if channel_id == None:
+        channel_id = ctx.channel.id
+    msgs = []
+    for msg in deleted_messages:
+        if msg["channel"] == channel_id:
+            msgs.append(f"> Author: {msg['author']}\n> Content: {msg['content']}")
+    if msgs:
+        await veltSend(ctx, "Snipe", "\n\n".join(msgs))
+            
+
 # :::::::::   ::::::::  ::::::::::: 
 # :+:    :+: :+:    :+:     :+:     
 # +:+    +:+ +:+    +:+     +:+     
