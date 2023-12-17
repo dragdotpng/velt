@@ -1,4 +1,5 @@
 import pypresence
+import threading
 import requests
 import textwrap
 import warnings
@@ -16,10 +17,10 @@ import os
 import re
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from win11toast import toast_async as toast
 from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
-from notifypy import Notify
 from discord import File
 from io import BytesIO
 
@@ -96,19 +97,16 @@ class Config:
 config = Config()
 config.check()
 
+
+
 class Notif:
     def __init__(self):
         self.title = "Velt"
 
-    def send(self, message):
+    async def send(self, message):
         if config.notify == True:
-            notification = Notify()
-            notification.title = self.title
-            notification.application_name = self.title
-            notification.message = message
-            notification.icon = "assets/icon.ico"
-            notification.audio = "assets/notif.wav"
-            notification.send()
+            await toast(self.title, message, duration="short", icon="assets/velt_big.png", audio=os.path.abspath("assets/notif.wav"))
+                
 
 def downloadAssets():
     assets = [
@@ -133,7 +131,7 @@ velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at
 @velt.event
 async def on_ready():
     os.system("title Velt")
-    notif.send("Logged in")
+    asyncio.create_task(notif.send("Logged in"))
     banner = """                                           
 .sSSS s.    .sSSSSs.    SSSSS       .sSSSSSSSSSSSSSs. 
 S SSS SSSs. S SSSSSSSs. S SSS       SSSSS S SSS SSSSS 
@@ -203,7 +201,7 @@ async def on_message_delete(message):
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
-                notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
+                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})"))
 
 @velt.event
 async def on_message(message):
@@ -211,7 +209,7 @@ async def on_message(message):
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
-                notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
+                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})"))
     await velt.process_commands(message)
 
 
@@ -521,6 +519,11 @@ async def help(ctx, input: str = None, page: int = 1):
 > Aliases: {', '.join(command.aliases) if command.aliases else 'No aliases'}"""
             await veltSend(ctx, "Success", success_message)
 
+@velt.command()
+async def test(ctx):
+    url = "https://discord.com/api/v10/users/@me/connections"
+    r = requests.get(url, headers={"Authorization": config.token})
+    print(r.text)
 
 # Monkey patching...
 og = discord.utils._get_build_number
