@@ -17,7 +17,8 @@ import os
 import re
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from win11toast import toast_async as toast
+if os.name == "nt":
+    from win11toast import toast_async as toast
 from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
@@ -105,7 +106,7 @@ class Notif:
         self.title = "Velt"
 
     async def send(self, message):
-        if config.notify == True:
+        if config.notify == True and os.name == "nt":
             await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
                 
 
