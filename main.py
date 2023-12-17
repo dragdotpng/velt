@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 if os.name == "nt":
     from win11toast import toast_async as toast
 else:
-    from notify import notification
+    from notifypy import Notify
 from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
@@ -114,7 +114,12 @@ class Notif:
             if os.name == "nt":
                 await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
             else:
-                notification(summary=self.title, message=message, timeout=5000, app_name="Velt", image=os.path.abspath("assets/velt_big.png"))
+                notification = Notify()
+                notification.title = self.title
+                notification.message = message
+                notification.icon = os.path.abspath("assets/velt_big.png")
+                notification.audio = os.path.abspath("assets/notif.wav")
+                notification.send()
                 
 
 def downloadAssets():
