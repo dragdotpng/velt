@@ -223,6 +223,7 @@ async def on_message_delete(message):
             "channel": message.channel.id,
             "guild": message.guild.id
         }
+        global deleted_messages
         deleted_messages.append(msg_object)
 
 @velt.event
