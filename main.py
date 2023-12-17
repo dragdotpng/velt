@@ -26,7 +26,8 @@ from io import BytesIO
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-os.system("pip install Pillow==9.4.0")
+#negawat?
+#os.system("pip install Pillow==9.4.0")
 
 os.system("cls")
 
