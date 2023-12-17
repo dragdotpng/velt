@@ -30,11 +30,13 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #negawat?
 #os.system("pip install Pillow==9.4.0")
 
-os.system("cls")
-
 def prettyprint(text):
     print(f"[{Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
 
+def clear():
+    os.system("cls") if os.name == "nt" else os.system("clear")
+
+clear()
 
 class Config:
     def __init__(self):
