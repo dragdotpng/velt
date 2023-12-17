@@ -114,7 +114,8 @@ class Notif:
     async def send(self, message):
         if config.notify == True:
             if os.name == "nt":
-                await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
+                # do nothing on dismiss
+                await toast(title=self.title, body=message, icon=os.path.abspath("assets/velt_big.png"), audio=os.path.abspath("assets/notif.wav"), app_id="Velt", on_dismissed=lambda reason: None)
             else:
                 playsound.playsound(os.path.abspath("assets/notif.wav"), block=False)
                 notification(summary=self.title, message=message, timeout=5000, app_name="Velt", image=os.path.abspath("assets/velt_big.png"))
@@ -239,34 +240,21 @@ async def on_message(message):
 def generate_image(title, description, footer):
     colors = {
         'text': (255, 255, 255),
-        'background': (25, 25, 25),
+        'background': (25,25,25),
         'primary': (255,188,207),
         'secondary': (10, 10, 10),
         'accent': (158, 41, 74)
     }
 
-    image_width = 600
+    image_width = 700
     image_height = 800
     title_padding = 45
-    description_padding = 7.5  # reduced padding between lines
+    description_padding = 8
     footer_padding = 20
     corner_radius = 50
-    border_width = 5
 
     image = Image.new('RGB', (image_width, image_height), colors['background'])
     draw = ImageDraw.Draw(image)
-
-    #small_image = Image.open(requests.get(config.embed["image"], stream=True).raw)
-    #small_image = small_image.resize((int(image_width * 0.2), int(image_width * 0.2)))
-
-    #mask = Image.new('L', small_image.size, 0)
-    #draw_mask = ImageDraw.Draw(mask)
-    #draw_mask.ellipse((0, 0) + small_image.size, fill=255)
-
-    #small_image = ImageOps.fit(small_image, mask.size, centering=(0.5, 0.5))
-    #small_image.putalpha(mask)
-
-    #image.paste(small_image, (image_width - small_image.size[0] - 25, 15), small_image)
 
     title_font_size = int(image_width * 0.089)
     title_font = ImageFont.truetype(f'Metropolis-Bold.otf', title_font_size)
@@ -274,8 +262,9 @@ def generate_image(title, description, footer):
     description_font_size = int(image_width * 0.0525)
     description_font = ImageFont.truetype(f'Metropolis-Regular.otf', description_font_size)
 
-    footer_font_size = int(image_width * 0.05)
-    footer_font = ImageFont.truetype(f'Metropolis-Regular.otf', footer_font_size)
+    footer_font_size = int(image_width * 0.06)
+    footer_font = ImageFont.truetype(f'Metropolis-Bold.otf', footer_font_size)
+    footer_width, footer_height = draw.textsize(footer, font=footer_font)
 
     description_lines = []
     for line in description.split('\n'):
@@ -295,34 +284,66 @@ def generate_image(title, description, footer):
 
     title_x = title_padding
     title_y = title_padding
+    title_width, title_height = draw.textsize(title, font=title_font)
+
+    title_background_color = (50, 50, 50)
+    rectangle_padding = int(image_width * 0.03)
+    rectangle_x1 = title_x - rectangle_padding
+    rectangle_y1 = title_y - rectangle_padding
+    rectangle_x2 = title_x + title_width + rectangle_padding
+    rectangle_y2 = title_y + title_height + rectangle_padding
+
+    title_background_color = (50, 50, 50)
+    draw.rounded_rectangle(
+        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
+        fill=title_background_color,
+        radius=corner_radius
+    )
+
     draw.text((title_x, title_y), title, font=title_font, fill=colors['text'])
 
-    line_y = title_y + title_height + title_padding
-    draw.line([(title_x, line_y), (image_width - title_x, line_y)], fill=colors['accent'], width=border_width)
-
     description_x = title_padding
+    description_y = title_height + 3 * title_padding
+    description_width = image_width - 2 * title_padding
+
+    description_height = sum(draw.textsize(line, font=description_font)[1] + description_padding for line in description_lines)
+
+    rectangle_padding = int(image_width * 0.03)
+    rectangle_x1 = description_x - rectangle_padding
+    rectangle_y1 = description_y - rectangle_padding
+    rectangle_x2 = description_x + description_width + rectangle_padding
+    rectangle_y2 = description_y + description_height + rectangle_padding
+
+    description_background_color = (50, 50, 50)
+    draw.rounded_rectangle(
+        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
+        fill=description_background_color,
+        radius=corner_radius
+    )
+
     for line in description_lines:
         draw.text((description_x, description_start_y), line, font=description_font, fill=colors['text'])
         description_start_y += draw.textsize(line, font=description_font)[1] + description_padding
 
-    footer_box_width = image_width - 2 * title_padding
-    footer_box_height = footer_height
-    footer_box_x = title_padding
-    footer_box_y = image_height - title_padding - footer_box_height
+    footer_x = title_padding
+    footer_y = image_height - footer_height - footer_padding
+    footer_width = image_width - 2 * title_padding
+    footer_text_height = draw.textsize(footer, font=footer_font)[1]
 
+    rectangle_padding = int(image_width * 0.03)
+    rectangle_x1 = footer_x - rectangle_padding
+    rectangle_y1 = footer_y - rectangle_padding
+    rectangle_x2 = footer_x + footer_width + rectangle_padding
+    rectangle_y2 = footer_y + footer_text_height + rectangle_padding
+    
+    footer_background_color = (50, 50, 50)
     draw.rounded_rectangle(
-        [(footer_box_x, footer_box_y), (footer_box_x + footer_box_width, footer_box_y + footer_box_height)],
-        fill=colors['secondary'],
-        outline=colors['accent'],
-        width=border_width,
+        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
+        fill=footer_background_color,
         radius=corner_radius
     )
 
-    footer_text_width, footer_text_height = draw.textsize(footer, font=footer_font)
-    footer_text_x = footer_box_x + (footer_box_width - footer_text_width) // 2
-    footer_text_y = footer_box_y + (footer_box_height - footer_text_height) // 2
-
-    draw.text((footer_text_x, footer_text_y), footer, font=footer_font, fill=colors['text'])
+    draw.text((footer_x, footer_y), footer, font=footer_font, fill=colors['text'])
 
     mask = Image.new('L', image.size, 0)
     draw_mask = ImageDraw.Draw(mask)
