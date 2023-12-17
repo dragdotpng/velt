@@ -259,13 +259,13 @@ def generate_image(title, description, footer):
     draw = ImageDraw.Draw(image)
 
     title_font_size = int(image_width * 0.089)
-    title_font = ImageFont.truetype(f'Metropolis-Bold.otf', title_font_size)
+    title_font = ImageFont.truetype(f'assets/Metropolis-Bold.otf', title_font_size)
 
     description_font_size = int(image_width * 0.0525)
-    description_font = ImageFont.truetype(f'Metropolis-Regular.otf', description_font_size)
+    description_font = ImageFont.truetype(f'assets/Metropolis-Regular.otf', description_font_size)
 
     footer_font_size = int(image_width * 0.06)
-    footer_font = ImageFont.truetype(f'Metropolis-Bold.otf', footer_font_size)
+    footer_font = ImageFont.truetype(f'assets/Metropolis-Bold.otf', footer_font_size)
     footer_width, footer_height = draw.textsize(footer, font=footer_font)
 
     description_lines = []
@@ -280,7 +280,7 @@ def generate_image(title, description, footer):
 
     if description_height > available_height:
         description_font_size = int(description_font_size * available_height / description_height)
-        description_font = ImageFont.truetype('Metropolis-Regular.otf', description_font_size)
+        description_font = ImageFont.truetype('assets/Metropolis-Regular.otf', description_font_size)
 
     description_start_y = title_height + 3 * title_padding
 
