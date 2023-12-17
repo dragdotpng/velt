@@ -114,7 +114,7 @@ class Notif:
             if os.name == "nt":
                 await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
             else:
-                notification(summary=self.title, message=message, timeout=5000)
+                notification(summary=self.title, message=message, timeout=5000, app_name="Velt", image=os.path.abspath("assets/velt_big.png"))
                 
 
 def downloadAssets():
