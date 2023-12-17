@@ -19,6 +19,8 @@ import re
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 if os.name == "nt":
     from win11toast import toast_async as toast
+else:
+    from notify import notification
 from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
@@ -108,8 +110,11 @@ class Notif:
         self.title = "Velt"
 
     async def send(self, message):
-        if config.notify == True and os.name == "nt":
-            await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
+        if config.notify == True:
+            if os.name == "nt":
+                await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
+            else:
+                notification(summary=self.title, message=message, timeout=5000)
                 
 
 def downloadAssets():
@@ -149,7 +154,7 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     global start_time
     global rpc
     ################## thanks HannahHaven
-    url = "https://discord.com/api/v10/users/@me/relationships"
+    url = "https://discord.com/api/v9/users/@me/relationships"
     r = requests.get(url, headers={"Authorization": config.token})
     decode = r.json()
     friends = [user for user in decode if user.get('type') == 1]
@@ -349,7 +354,7 @@ async def ping(ctx):
     ping = velt.latency.__round__(3)
     ping = round(ping * 1000)
     google = "https://www.google.com"
-    discord_api = "https://discord.com/api/v10/gateway"
+    discord_api = "https://discord.com/api/v9/gateway"
     r1 = requests.get(google)
     r2 = requests.get(discord_api)
     r1 = r1.elapsed.total_seconds()
@@ -525,7 +530,7 @@ async def help(ctx, input: str = None, page: int = 1):
 
 @velt.command()
 async def test(ctx):
-    url = "https://discord.com/api/v10/users/@me/connections"
+    url = "https://discord.com/api/v9/users/@me/connections"
     r = requests.get(url, headers={"Authorization": config.token})
     print(r.text)
 
