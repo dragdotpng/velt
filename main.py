@@ -105,7 +105,7 @@ class Notif:
 
     async def send(self, message):
         if config.notify == True:
-            await toast(self.title, message, duration="short", icon="assets/velt_big.png", audio=os.path.abspath("assets/notif.wav"))
+            await toast(title=self.title, body=message, icon="https://raw.githubusercontent.com/VeltBot/assets/main/velt_big.jpg", audio=os.path.abspath("assets/notif.wav"), app_id="Velt")
                 
 
 def downloadAssets():
