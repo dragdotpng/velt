@@ -3,6 +3,7 @@ import threading
 import requests
 import textwrap
 import warnings
+import datetime
 import asyncio
 import difflib
 import logging
@@ -48,11 +49,22 @@ class Config:
         self.mode = "image"
         self.delete_after = 15
         self.logging = "console"
-        self.rpc = True
         self.notify = True
         self.log = {
             "ghostping": True,
             "ping": True
+        }
+        self.rpc = {
+            "enabled": True,
+            "type": "LISTENING",
+            "name": "Velt",
+            "details": "",
+            "buttons": [
+                {
+                    "label": "Discord",
+                    "url": "https://discord.gg/dQ96PhfqNq"
+                }
+            ]
         }
         self.embed = {
             "image": "",
@@ -68,12 +80,22 @@ class Config:
     "mode": "image",
     "delete_after": 15,
     "logging": "channel",
-    "rpc": true,
     "notify": true,
     "log": {
         "ghostping": true,
-        "ping": true,
-        "messages": true
+        "ping": true
+    },
+    "rpc": {
+        "enabled": true,
+        "state": "best!?",
+        "name": "Velt",
+        "details": "",
+        "buttons": [
+            {
+                "label": "Discord",
+                "url": "https://discord.gg/dQ96PhfqNq"
+            }
+        ]
     },
     "embed": {
         "footer": "Velt"
@@ -184,10 +206,13 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     print(Style.RESET_ALL)
     print(zamn)
     cmds = len(velt.commands)
-    rpc = pypresence.AioPresence("1185652637966811146")
-    await rpc.connect()
-    prettyprint("RPC connected")
-    await rpc.update(details=str(cmds) + " commands", large_image="velt", large_text="Velt", start=start_time)
+    if config.rpc["enabled"] == True:
+        rpc = pypresence.AioPresence("1185652637966811146")
+        buttons = config.rpc["buttons"]
+        await rpc.connect()
+        prettyprint("RPC connected")
+        await rpc.update(state=config.rpc["state"] ,details=config.rpc["details"], large_image="velt", large_text="Velt", start=start_time, buttons=buttons)
+        prettyprint(f"{config.rpc['state']} | {config.rpc['details']}")
     prettyprint(f"Logged in as {velt.user.name} ({Fore.LIGHTMAGENTA_EX}{velt.user.id}{Style.RESET_ALL})")
 
 @velt.event
@@ -547,6 +572,72 @@ async def search(ctx, query):
         await veltSend(ctx, query, success_message)
     else:
         await veltSend(ctx, query, "No matches found")
+
+# ::::    ::::   ::::::::  :::::::::  
+# +:+:+: :+:+:+ :+:    :+: :+:    :+: 
+# +:+ +:+:+ +:+ +:+    +:+ +:+    +:+ 
+# +#+  +:+  +#+ +#+    +:+ +#+    +:+ 
+# +#+       +#+ +#+    +#+ +#+    +#+ 
+# #+#       #+# #+#    #+# #+#    #+# 
+# ###       ###  ########  #########  
+
+@velt.command(brief="moderation", aliases=["fastclear"])
+async def fclear(ctx, channel: discord.TextChannel):
+    if not ctx.author.guild_permissions.manage_channels:
+        await veltSend(ctx, "fclear", "You do not have permission to manage channels")
+        return
+    channelpos = channel.position
+    new = await channel.clone(reason="fclear")
+    await channel.delete(reason="fclear")
+    await new.edit(position=channelpos, reason="fclear")
+
+@velt.command(brief="moderation", aliases=["purge"])
+async def clear(ctx, amount: int = 100):
+    if not ctx.author.guild_permissions.manage_messages:
+        await veltSend(ctx, "clear", "You do not have permission to manage messages")
+        return
+    await ctx.channel.purge(limit=amount)
+
+@velt.command(brief="moderation")
+async def kick(ctx, user: discord.Member, *, reason: str = None):
+    if not ctx.author.guild_permissions.kick_members:
+        await veltSend(ctx, "kick", "You do not have permission to kick members")
+        return
+    await user.kick(reason=reason)
+    await veltSend(ctx, "kick", f"{user.name} has been kicked")
+
+@velt.command(brief="moderation")
+async def ban(ctx, user: discord.Member, *, reason: str = None):
+    if not ctx.author.guild_permissions.ban_members:
+        await veltSend(ctx, "ban", "You do not have permission to ban members")
+        return
+    await user.ban(reason=reason)
+    await veltSend(ctx, "ban", f"{user.name} has been banned")
+
+@velt.command(brief="moderation")
+async def mute(ctx, user: discord.Member, *, reason: str = None):
+    if not ctx.author.guild_permissions.manage_roles:
+        await veltSend(ctx, "mute", "You do not have permission to manage roles")
+        return
+    role = discord.utils.get(ctx.guild.roles, name="Muted")
+    if not role:
+        role = await ctx.guild.create_role(name="Muted")
+        for channel in ctx.guild.channels:
+            await channel.set_permissions(role, send_messages=False)
+    await user.add_roles(role, reason=reason)
+    await veltSend(ctx, "mute", f"{user.name} has been muted")
+
+@velt.command(brief="moderation")
+async def unmute(ctx, user: discord.Member, *, reason: str = None):
+    if not ctx.author.guild_permissions.manage_roles:
+        await veltSend(ctx, "unmute", "You do not have permission to manage roles")
+        return
+    role = discord.utils.get(ctx.guild.roles, name="Muted")
+    if not role:
+        await veltSend(ctx, "unmute", "This user is not muted")
+        return
+    await user.remove_roles(role, reason=reason)
+    await veltSend(ctx, "unmute", f"{user.name} has been unmuted")
 
 
 @velt.command()
