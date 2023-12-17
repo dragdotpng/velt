@@ -141,7 +141,8 @@ velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at
 
 @velt.event
 async def on_ready():
-    os.system("title Velt")
+    if os.name == "nt":
+        os.system("title Velt")
     asyncio.create_task(notif.send("Logged in"))
     banner = """                                           
 .sSSS s.    .sSSSSs.    SSSSS       .sSSSSSSSSSSSSSs. 
