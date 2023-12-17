@@ -42,6 +42,9 @@ def clear():
 
 clear()
 
+global state
+state = False
+
 class Config:
     def __init__(self):
         self.token = ""
@@ -217,9 +220,6 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
 
 @velt.event
 async def on_command(ctx):
-    global rpc
-    last_command = ctx.message.content[1:].split(" ")[0]
-    await rpc.update(state="Last command used: " + last_command, details=str(len(velt.commands)) + " commands", large_image="velt", large_text="Velt", start=start_time)
     prettyprint(f"Command: {ctx.message.content[1:]}")
     try:
         await ctx.message.delete()
@@ -380,6 +380,24 @@ def generate_image(title, description, footer):
     image.save(image_bytes, format='PNG')
     image_bytes.seek(0)
     return image_bytes
+
+def spotifhelp():
+    url = "https://discord.com/api/v9/users/@me/connections"
+    r = requests.get(url, headers={"Authorization": config.token})
+    response = r.json()
+    spotify_access_token = None
+    for connection in response:
+        if connection['type'] == 'spotify':
+            spotify_access_token = connection['access_token']
+            break
+    url = "https://api.spotify.com/v1/me/player/devices"
+    headers = {
+        "Authorization": f"Bearer {spotify_access_token}"
+    }
+    r = requests.get(url, headers=headers)
+    for device in r.json()["devices"]:
+        if device["is_active"] == True:
+            return device["id"], spotify_access_token
 
 
 async def veltSend(ctx, title, description):
@@ -543,6 +561,109 @@ async def dog(ctx):
     r = requests.get(url, headers=headers)
     await ctx.send(r.json()[0]["url"])
 
+@velt.command(brief="fun")
+async def spotify(ctx):
+    await veltSend(ctx, "spotify", "nowplaying - shows currently playing song\nplay - resumes current song\npause - pauses current song\nvolume (vol) - sets spotify volume\nnext - goes to the next song\nprevious - goes to the previous song\nshuffle - turns shuffle on or off")
+
+@velt.command(brief="fun")
+async def play(ctx):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.put(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", "Playing")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun")
+async def pause(ctx):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/pause?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.put(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", "Paused")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun", aliases=["vol"])
+async def volume(ctx, vol: int):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/volume?volume_percent={vol}&device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.put(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", f"Volume set to {vol}")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun", aliases=["skip"])
+async def next(ctx):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/next?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.post(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", "Playing next song")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun")
+async def previous(ctx):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/previous?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.post(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", "Playing previous song")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun")
+async def shuffle(ctx):
+    global state
+    state = not state
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/shuffle?state={state}&device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.put(url, headers=headers)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", f"Shuffle set to {state}")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="fun")
+async def nowplaying(ctx):
+    id, token = spotifhelp()
+    url = f"https://api.spotify.com/v1/me/player/currently-playing?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    r = requests.get(url, headers=headers)
+    if r.status_code == 200:
+        response = r.json()
+        artist = response["item"]["artists"][0]["name"]
+        song = response["item"]["name"]
+        album = response["item"]["album"]["name"]
+        await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}\nAlbum: {album}")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+
+
 
 #  ::::::::  :::::::::: ::::    ::: 
 # :+:    :+: :+:        :+:+:   :+: 
@@ -682,7 +803,22 @@ async def help(ctx, input: str = None, page: int = 1):
 async def test(ctx):
     url = "https://discord.com/api/v9/users/@me/connections"
     r = requests.get(url, headers={"Authorization": config.token})
-    print(r.text)
+    response = r.json()
+    spotify_access_token = None
+    for connection in response:
+        if connection['type'] == 'spotify':
+            spotify_access_token = connection['access_token']
+            break
+    print(spotify_access_token)
+    url = "https://api.spotify.com/v1/me/player/devices"
+    headers = {
+        "Authorization": f"Bearer {spotify_access_token}"
+    }
+    r = requests.get(url, headers=headers)
+    for device in r.json()["devices"]:
+        if device["is_active"] == True:
+            print(device["id"])
+            break
 
 # Monkey patching...
 og = discord.utils._get_build_number
