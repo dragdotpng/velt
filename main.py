@@ -55,7 +55,8 @@ class Config:
         self.notify = True
         self.log = {
             "ghostping": True,
-            "ping": True
+            "ping": True,
+            "messages": True
         }
         self.rpc = {
             "enabled": True,
@@ -86,7 +87,8 @@ class Config:
     "notify": true,
     "log": {
         "ghostping": true,
-        "ping": true
+        "ping": true,
+        "messages:": true
     },
     "rpc": {
         "enabled": true,
