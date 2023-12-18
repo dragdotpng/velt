@@ -273,10 +273,10 @@ def generate_image(title, description, footer):
         'accent': (158, 41, 74)
     }
 
-    image_width = 700
-    image_height = 800
-    title_padding = 45
-    description_padding = 8
+    image_width = 750
+    image_height = 850
+    title_padding = 35
+    description_padding = 6.5
     footer_padding = 20
     corner_radius = 50
 
@@ -286,7 +286,7 @@ def generate_image(title, description, footer):
     title_font_size = int(image_width * 0.089)
     title_font = ImageFont.truetype(f'assets/Metropolis-Bold.otf', title_font_size)
 
-    description_font_size = int(image_width * 0.0525)
+    description_font_size = int(image_width * 0.0515)
     description_font = ImageFont.truetype(f'assets/Metropolis-Regular.otf', description_font_size)
 
     footer_font_size = int(image_width * 0.06)
@@ -295,7 +295,7 @@ def generate_image(title, description, footer):
 
     description_lines = []
     for line in description.split('\n'):
-        description_lines.extend(textwrap.wrap(line, width=30))
+        description_lines.extend(textwrap.wrap(line, width=40))
 
     title_height = draw.textsize(title, font=title_font)[1]
     footer_height = footer_font_size + footer_padding
@@ -335,7 +335,7 @@ def generate_image(title, description, footer):
 
     description_height = sum(draw.textsize(line, font=description_font)[1] + description_padding for line in description_lines)
 
-    rectangle_padding = int(image_width * 0.03)
+    rectangle_padding = int(image_width * 0.025)
     rectangle_x1 = description_x - rectangle_padding
     rectangle_y1 = description_y - rectangle_padding
     rectangle_x2 = description_x + description_width + rectangle_padding
@@ -398,6 +398,23 @@ def spotifhelp():
     for device in r.json()["devices"]:
         if device["is_active"] == True:
             return device["id"], spotify_access_token
+
+def find_song(song_name):
+    url = f"https://api.spotify.com/v1/search?q={song_name}&type=track&limit=1"
+    id, auth = spotifhelp()
+    headers = {
+        "Authorization": f"Bearer {auth}"
+    }
+    r = requests.get(url, headers=headers)
+    response = r.json()
+    try:
+        track_id = response["tracks"]["items"][0]["id"]
+        songname = response["tracks"]["items"][0]["name"]
+        artist = response["tracks"]["items"][0]["artists"][0]["name"]
+        album = response["tracks"]["items"][0]["album"]["name"]
+        return track_id, songname, artist, album, auth
+    except:
+        return None
 
 
 async def veltSend(ctx, title, description):
@@ -561,12 +578,21 @@ async def dog(ctx):
     r = requests.get(url, headers=headers)
     await ctx.send(r.json()[0]["url"])
 
-@velt.command(brief="fun")
-async def spotify(ctx):
-    await veltSend(ctx, "spotify", "nowplaying - shows currently playing song\nplay - resumes current song\npause - pauses current song\nvolume (vol) - sets spotify volume\nnext - goes to the next song\nprevious - goes to the previous song\nshuffle - turns shuffle on or off")
+#  ::::::::  :::::::::   ::::::::  ::::::::::: ::::::::::: :::::::::: :::   ::: 
+# :+:    :+: :+:    :+: :+:    :+:     :+:         :+:     :+:        :+:   :+: 
+# +:+        +:+    +:+ +:+    +:+     +:+         +:+     +:+         +:+ +:+  
+# +#++:++#++ +#++:++#+  +#+    +:+     +#+         +#+     :#::+::#     +#++:   
+#        +#+ +#+        +#+    +#+     +#+         +#+     +#+           +#+    
+# #+#    #+# #+#        #+#    #+#     #+#         #+#     #+#           #+#    
+#  ########  ###         ########      ###     ########### ###           ###    
 
-@velt.command(brief="fun")
-async def play(ctx):
+
+@velt.command(brief="spotify")
+async def spotify(ctx):
+    await veltSend(ctx, "spotify", "play (song) - plays a song\nnowplaying - shows currently playing song\nresume - resumes current song\npause - pauses current song\nvolume (vol) - sets spotify volume\nnext - goes to the next song\nprevious - goes to the previous song\nshuffle - turns shuffle on or off")
+
+@velt.command(brief="spotify")
+async def resume(ctx):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
     headers = {
@@ -574,11 +600,11 @@ async def play(ctx):
     }
     r = requests.put(url, headers=headers)
     if r.status_code == 204:
-        await veltSend(ctx, "spotify", "Playing")
+        await veltSend(ctx, "spotify", "Resumed")
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun")
+@velt.command(brief="spotify")
 async def pause(ctx):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/pause?device_id={id}"
@@ -591,7 +617,7 @@ async def pause(ctx):
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun", aliases=["vol"])
+@velt.command(brief="spotify", aliases=["vol"])
 async def volume(ctx, vol: int):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/volume?volume_percent={vol}&device_id={id}"
@@ -604,7 +630,7 @@ async def volume(ctx, vol: int):
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun", aliases=["skip"])
+@velt.command(brief="spotify", aliases=["skip"])
 async def next(ctx):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/next?device_id={id}"
@@ -617,7 +643,7 @@ async def next(ctx):
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun")
+@velt.command(brief="spotify")
 async def previous(ctx):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/previous?device_id={id}"
@@ -630,7 +656,7 @@ async def previous(ctx):
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun")
+@velt.command(brief="spotify")
 async def shuffle(ctx):
     global state
     state = not state
@@ -645,7 +671,7 @@ async def shuffle(ctx):
     else:
         await veltSend(ctx, "spotify", "Error")
 
-@velt.command(brief="fun")
+@velt.command(brief="spotify")
 async def nowplaying(ctx):
     id, token = spotifhelp()
     url = f"https://api.spotify.com/v1/me/player/currently-playing?device_id={id}"
@@ -659,6 +685,26 @@ async def nowplaying(ctx):
         song = response["item"]["name"]
         album = response["item"]["album"]["name"]
         await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}\nAlbum: {album}")
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="spotify")
+async def play(ctx, *, song):
+    id, token = spotifhelp()
+    track_id, songname, artist, album, auth = find_song(song)
+    if track_id == None:
+        await veltSend(ctx, "spotify", "Song not found")
+        return
+    url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {auth}"
+    }
+    data = {
+        "uris": [f"spotify:track:{track_id}"]
+    }
+    r = requests.put(url, headers=headers, json=data)
+    if r.status_code == 204:
+        await veltSend(ctx, "spotify", f"Playing {songname} by {artist}")
     else:
         await veltSend(ctx, "spotify", "Error")
 
