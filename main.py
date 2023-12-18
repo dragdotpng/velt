@@ -716,8 +716,7 @@ async def nowplaying(ctx):
         response = r.json()
         artist = response["item"]["artists"][0]["name"]
         song = response["item"]["name"]
-        album = response["item"]["album"]["name"]
-        await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}\nAlbum: {album}")
+        await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}")
     else:
         await veltSend(ctx, "spotify", "Error")
 
