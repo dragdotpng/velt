@@ -429,7 +429,7 @@ async def veltSend(ctx, title, description):
     footer = config.embed["footer"]
     mode = "image"
     mode = config.mode
-    if not ctx.channel.type == discord.ChannelType.private:
+    if not ctx.guild == None:
         permissions = ctx.channel.permissions_for(ctx.guild.me)
         if not permissions.attach_files:
             mode = "text"
