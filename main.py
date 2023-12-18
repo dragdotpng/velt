@@ -295,7 +295,7 @@ def generate_image(title, description, footer):
 
     description_lines = []
     for line in description.split('\n'):
-        description_lines.extend(textwrap.wrap(line, width=40))
+        description_lines.extend(textwrap.wrap(line, width=35))
 
     title_height = draw.textsize(title, font=title_font)[1]
     footer_height = footer_font_size + footer_padding
@@ -707,7 +707,6 @@ async def play(ctx, *, song):
         await veltSend(ctx, "spotify", f"Playing {songname} by {artist}")
     else:
         await veltSend(ctx, "spotify", "Error")
-
 
 
 
