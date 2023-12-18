@@ -395,13 +395,18 @@ def spotifhelp():
         "Authorization": f"Bearer {spotify_access_token}"
     }
     r = requests.get(url, headers=headers)
-    for device in r.json()["devices"]:
-        if device["is_active"] == True:
-            return device["id"], spotify_access_token
+    try:
+        for device in r.json()["devices"]:
+            if device["is_active"] == True:
+                return device["id"], spotify_access_token
+    except:
+        return None, None
 
 def find_song(song_name):
     url = f"https://api.spotify.com/v1/search?q={song_name}&type=track&limit=1"
     id, auth = spotifhelp()
+    if id == None:
+        return None
     headers = {
         "Authorization": f"Bearer {auth}"
     }
@@ -422,6 +427,10 @@ async def veltSend(ctx, title, description):
     footer = config.embed["footer"]
     mode = "image"
     mode = config.mode
+    permissions = ctx.channel.permissions_for(ctx.guild.me)
+    if not permissions.attach_files:
+        mode = "text"
+            
     if mode not in ["image", "text"]:
         mode = "image"
     if mode.lower() == "image":
@@ -594,6 +603,9 @@ async def spotify(ctx):
 @velt.command(brief="spotify")
 async def resume(ctx):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -607,6 +619,9 @@ async def resume(ctx):
 @velt.command(brief="spotify")
 async def pause(ctx):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/pause?device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -620,6 +635,9 @@ async def pause(ctx):
 @velt.command(brief="spotify", aliases=["vol"])
 async def volume(ctx, vol: int):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/volume?volume_percent={vol}&device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -633,6 +651,9 @@ async def volume(ctx, vol: int):
 @velt.command(brief="spotify", aliases=["skip"])
 async def next(ctx):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/next?device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -646,6 +667,9 @@ async def next(ctx):
 @velt.command(brief="spotify")
 async def previous(ctx):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/previous?device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -661,6 +685,9 @@ async def shuffle(ctx):
     global state
     state = not state
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/shuffle?state={state}&device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -674,6 +701,9 @@ async def shuffle(ctx):
 @velt.command(brief="spotify")
 async def nowplaying(ctx):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     url = f"https://api.spotify.com/v1/me/player/currently-playing?device_id={id}"
     headers = {
         "Authorization": f"Bearer {token}"
@@ -691,6 +721,9 @@ async def nowplaying(ctx):
 @velt.command(brief="spotify")
 async def play(ctx, *, song):
     id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
     track_id, songname, artist, album, auth = find_song(song)
     if track_id == None:
         await veltSend(ctx, "spotify", "Song not found")
@@ -849,6 +882,7 @@ async def test(ctx):
     url = "https://discord.com/api/v9/users/@me/connections"
     r = requests.get(url, headers={"Authorization": config.token})
     response = r.json()
+    print(response)
     spotify_access_token = None
     for connection in response:
         if connection['type'] == 'spotify':
@@ -860,7 +894,9 @@ async def test(ctx):
         "Authorization": f"Bearer {spotify_access_token}"
     }
     r = requests.get(url, headers=headers)
+    print(r.text)
     for device in r.json()["devices"]:
+        print(device["name"])
         if device["is_active"] == True:
             print(device["id"])
             break
