@@ -427,9 +427,12 @@ async def veltSend(ctx, title, description):
     footer = config.embed["footer"]
     mode = "image"
     mode = config.mode
-    permissions = ctx.channel.permissions_for(ctx.guild.me)
-    if not permissions.attach_files:
-        mode = "text"
+    if ctx.guild.me != None:
+        permissions = ctx.channel.permissions_for(ctx.guild.me)
+        if not permissions.attach_files:
+            mode = "text"
+    else:
+        mode = config.mode
             
     if mode not in ["image", "text"]:
         mode = "image"
@@ -931,6 +934,7 @@ async def gbn(session: ClientSession) -> int:  # Thank you Discord-S.C.U.M
 discord.utils._get_build_number = gbn
 
 try:
+    config.check()
     velt.run(config.token, log_handler=None)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
