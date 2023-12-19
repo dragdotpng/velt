@@ -934,7 +934,7 @@ discord.utils._get_build_number = gbn
 
 try:
     config.check()
-    velt.run(config.token)
+    velt.run(config.token, log_handler=None)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
     config.setk("token", input("> "))
