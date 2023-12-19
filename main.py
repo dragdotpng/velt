@@ -386,6 +386,7 @@ def spotifhelp():
     r = requests.get(url, headers={"Authorization": config.token})
     response = r.json()
     spotify_access_token = None
+    id = None
     for connection in response:
         if connection['type'] == 'spotify':
             spotify_access_token = connection['access_token']
@@ -395,12 +396,11 @@ def spotifhelp():
         "Authorization": f"Bearer {spotify_access_token}"
     }
     r = requests.get(url, headers=headers)
-    try:
-        for device in r.json()["devices"]:
-            if device["is_active"] == True:
-                return device["id"], spotify_access_token
-    except:
-        return None, None
+    for device in r.json()["devices"]:
+        if device["is_active"] == True:
+            id = device["id"]
+            break
+    return id, spotify_access_token
 
 def find_song(song_name):
     url = f"https://api.spotify.com/v1/search?q={song_name}&type=track&limit=1"
@@ -933,7 +933,7 @@ discord.utils._get_build_number = gbn
 
 try:
     config.check()
-    velt.run(config.token, log_handler=None)
+    velt.run(config.token)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
     config.setk("token", input("> "))
