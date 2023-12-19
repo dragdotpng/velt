@@ -55,7 +55,8 @@ class Config:
         self.notify = True
         self.log = {
             "ghostping": True,
-            "ping": True
+            "ping": True,
+            "messages": True
         }
         self.rpc = {
             "enabled": True,
@@ -86,7 +87,8 @@ class Config:
     "notify": true,
     "log": {
         "ghostping": true,
-        "ping": true
+        "ping": true,
+        "messages:": true
     },
     "rpc": {
         "enabled": true,
@@ -427,7 +429,7 @@ async def veltSend(ctx, title, description):
     footer = config.embed["footer"]
     mode = "image"
     mode = config.mode
-    if not ctx.channel.type == discord.ChannelType.private:
+    if not ctx.guild == None:
         permissions = ctx.channel.permissions_for(ctx.guild.me)
         if not permissions.attach_files:
             mode = "text"
@@ -714,8 +716,7 @@ async def nowplaying(ctx):
         response = r.json()
         artist = response["item"]["artists"][0]["name"]
         song = response["item"]["name"]
-        album = response["item"]["album"]["name"]
-        await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}\nAlbum: {album}")
+        await veltSend(ctx, "spotify", f"Artist: {artist}\nSong: {song}")
     else:
         await veltSend(ctx, "spotify", "Error")
 
