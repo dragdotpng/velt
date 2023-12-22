@@ -602,10 +602,6 @@ async def dog(ctx):
 
 
 @velt.command(brief="spotify")
-async def spotify(ctx):
-    await veltSend(ctx, "spotify", "play (song) - plays a song\nnowplaying - shows currently playing song\nresume - resumes current song\npause - pauses current song\nvolume (vol) - sets spotify volume\nnext - goes to the next song\nprevious - goes to the previous song\nshuffle - turns shuffle on or off")
-
-@velt.command(brief="spotify")
 async def resume(ctx):
     id, token = spotifhelp()
     if id == None:
@@ -728,20 +724,94 @@ async def play(ctx, *, song):
     if id == None:
         await veltSend(ctx, "spotify", "Auth token expired, try again later.")
         return
-    track_id, songname, artist, album, auth = find_song(song)
-    if track_id == None:
-        await veltSend(ctx, "spotify", "Song not found")
+
+    # Check if song is a Spotify URL
+    spotify_url_pattern = r"https?://open\.spotify\.com/(track|playlist|album)/([a-zA-Z0-9]+)"
+    match = re.match(spotify_url_pattern, song)
+    if match:
+        spotify_type, spotify_id = match.groups()
+        if spotify_type == "track":
+            url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+            headers = {"Authorization": f"Bearer {token}"}
+            data = {"uris": [f"spotify:track:{spotify_id}"]}
+            r = requests.put(url, headers=headers, json=data)
+            if r.status_code == 204:
+                await veltSend(ctx, "spotify", f"Playing song from link")
+            else:
+                await veltSend(ctx, "spotify", "Error")
+        elif spotify_type == "playlist":
+            url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+            headers = {"Authorization": f"Bearer {token}"}
+            playlist_id = re.search(r"https?://open\.spotify\.com/playlist/([a-zA-Z0-9]+)", song).group(1)
+            data = {"context_uri": f"spotify:playlist:{playlist_id}"}
+            r = requests.put(url, headers=headers, json=data)
+            if r.status_code == 204:
+                await veltSend(ctx, "spotify", f"Playing playlist")
+            else:
+                await veltSend(ctx, "spotify", "Error")
+            pass
+        elif spotify_type == "album":
+            url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+            headers = {"Authorization": f"Bearer {token}"}
+            album_id = re.search(r"https?://open\.spotify\.com/album/([a-zA-Z0-9]+)", song).group(1)
+            data = {"context_uri": f"spotify:album:{album_id}"}
+            r = requests.put(url, headers=headers, json=data)
+            if r.status_code == 204:
+                await veltSend(ctx, "spotify", f"Playing album")
+            else:
+                await veltSend(ctx, "spotify", "Error")
+            pass
+    else:
+        track_id, songname, artist, album, auth = find_song(song)
+        if track_id == None:
+            await veltSend(ctx, "spotify", "Song not found")
+            return
+        url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+        headers = {"Authorization": f"Bearer {auth}"}
+        data = {"uris": [f"spotify:track:{track_id}"]}
+        r = requests.put(url, headers=headers, json=data)
+        if r.status_code == 204:
+            await veltSend(ctx, "spotify", f"Playing {songname} by {artist}")
+        else:
+            await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="spotify")
+async def ssearch(ctx, *, song):
+    id, token = spotifhelp()
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
         return
-    url = f"https://api.spotify.com/v1/me/player/play?device_id={id}"
+    url = f"https://api.spotify.com/v1/search?q={song}&type=track&limit=5"
     headers = {
-        "Authorization": f"Bearer {auth}"
+        "Authorization": f"Bearer {token}"
     }
-    data = {
-        "uris": [f"spotify:track:{track_id}"]
+    r = requests.get(url, headers=headers)
+    if r.status_code == 200:
+        response = r.json()
+        tracks = response["tracks"]["items"]
+        songs = []
+        for track in tracks:
+            songname = track["name"]
+            artist = track["artists"][0]["name"]
+            songs.append(f"{songname} by {artist}")
+        await veltSend(ctx, "spotify", "\n".join(songs))
+    else:
+        await veltSend(ctx, "spotify", "Error")
+
+@velt.command(brief="spotify")
+async def seek(ctx, pos: int):
+    id, token = spotifhelp()
+    pos = pos * 1000 
+    if id == None:
+        await veltSend(ctx, "spotify", "Auth token expired, try again later.")
+        return
+    url = f"https://api.spotify.com/v1/me/player/seek?position_ms={pos}&device_id={id}"
+    headers = {
+        "Authorization": f"Bearer {token}"
     }
-    r = requests.put(url, headers=headers, json=data)
+    r = requests.put(url, headers=headers)
     if r.status_code == 204:
-        await veltSend(ctx, "spotify", f"Playing {songname} by {artist}")
+        await veltSend(ctx, "spotify", f"Seeked to {pos/1000}s")
     else:
         await veltSend(ctx, "spotify", "Error")
 
