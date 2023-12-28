@@ -535,7 +535,7 @@ async def snipe(ctx, channel_id: int = None):
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
-            msgs.append(f"> Author: {msg['author']}\n> Content: {msg['content']}")
+            msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
     latest = msgs[-1]
     await veltSend(ctx, "Snipe", latest)
 
