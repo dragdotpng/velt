@@ -37,10 +37,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 def prettyprint(text):
     print(f"[{Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}] {text}")
 
-def clear():
+def cls():
     os.system("cls") if os.name == "nt" else os.system("clear")
 
-clear()
+cls()
 
 global state
 state = False
@@ -82,6 +82,12 @@ class Config:
     def check(self):
         if not os.path.exists("scripts"):
             os.makedirs("scripts")
+            ex = """
+@velt.command()
+async def yee(ctx):
+    await ctx.send("yuh")"""
+            with open("scripts/example.py", "w") as f:
+                f.write(ex)
         if not os.path.exists("config.json") or os.stat("config.json").st_size == 0:
             y = """
 {
@@ -188,12 +194,14 @@ def downloadAssets():
                 prettyprint(f"Downloading {name}")
                 f.write(requests.get(asset).content)
 
-def loadscripts():
-    for filename in os.listdir("scripts"):
-        if filename.endswith(".py"):
-            name = filename[:-3]
-            velt.load_extension(f"scripts.{name}")
-            prettyprint(f"Loaded {name}")
+async def loadscripts():
+    for scriptf in os.listdir("scripts"):
+        if scriptf.endswith(".py"):
+            with open(f"scripts/{scriptf}") as f:
+                script_code = f.read()
+            exec(script_code)
+            prettyprint(f"Loaded scripts.{scriptf[:-3]}")
+    cls()
 
 downloadAssets()
 
@@ -1045,6 +1053,8 @@ discord.utils._get_build_number = gbn
 
 try:
     cfg.check()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(loadscripts())
     velt.run(cfg.token, log_handler=None)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
