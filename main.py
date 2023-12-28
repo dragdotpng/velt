@@ -60,9 +60,13 @@ class Config:
         }
         self.rpc = {
             "enabled": True,
-            "type": "LISTENING",
+            "id"
             "name": "Velt",
             "details": "",
+            "large_image": "velt",
+            "large_text": "Velt",
+            "small_image": "",
+            "small_text": "",
             "buttons": [
                 {
                     "label": "Discord",
@@ -76,6 +80,8 @@ class Config:
         }
 
     def check(self):
+        if not os.path.exists("scripts"):
+            os.makedirs("scripts")
         if not os.path.exists("config.json") or os.stat("config.json").st_size == 0:
             y = """
 {
@@ -92,9 +98,14 @@ class Config:
     },
     "rpc": {
         "enabled": true,
+        "id": "1185652637966811146",
         "state": "best!?",
         "name": "Velt",
         "details": "",
+        "large_image": "velt",
+        "large_text": "Velt",
+        "small_image": "",
+        "small_text": "",
         "buttons": [
             {
                 "label": "Discord",
@@ -122,15 +133,28 @@ class Config:
             else:
                 setattr(self, key, value)
 
-    def setk(self, key, value):
+    def setk(self, key_path, value):
+        if value == "true":
+            value = True
+        elif value == "false":
+            value = False
+        keys = key_path.split('.')
         with open("config.json", "r") as f:
             data = json.load(f)
-        data[key] = value
+        temp = data
+        for key in keys[:-1]:
+            temp = temp.get(key, {})
+        temp[keys[-1]] = value
         with open("config.json", "w") as f:
             json.dump(data, f, indent=4)
 
-config = Config()
-config.check()
+    def get(self):
+        with open("config.json", "r") as f:
+            data = json.load(f)
+        return data
+
+cfg = Config()
+cfg.check()
 
 
 
@@ -139,7 +163,7 @@ class Notif:
         self.title = "Velt"
 
     async def send(self, message):
-        if config.notify == True:
+        if cfg.notify == True:
             if os.name == "nt":
                 # do nothing on dismiss
                 await toast(title=self.title, body=message, icon=os.path.abspath("assets/velt_big.png"), audio=os.path.abspath("assets/notif.wav"), app_id="Velt", on_dismissed=lambda reason: None)
@@ -164,11 +188,18 @@ def downloadAssets():
                 prettyprint(f"Downloading {name}")
                 f.write(requests.get(asset).content)
 
+def loadscripts():
+    for filename in os.listdir("scripts"):
+        if filename.endswith(".py"):
+            name = filename[:-3]
+            velt.load_extension(f"scripts.{name}")
+            prettyprint(f"Loaded {name}")
+
 downloadAssets()
 
 notif = Notif()
 
-velt = commands.Bot(command_prefix=config.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
+velt = commands.Bot(command_prefix=cfg.prefix, self_bot=True, chunk_guilds_at_startup=False, request_guilds=False, help_command=None)
 deleted_messages = []
 
 @velt.event
@@ -190,7 +221,7 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     global rpc
     ################## thanks HannahHaven
     url = "https://discord.com/api/v9/users/@me/relationships"
-    r = requests.get(url, headers={"Authorization": config.token})
+    r = requests.get(url, headers={"Authorization": cfg.token})
     decode = r.json()
     friends = [user for user in decode if user.get('type') == 1]
     pending = [user for user in decode if user.get('type') == 4]
@@ -202,7 +233,7 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     zamn = f"""
 [-] Friend count: {txtf}
 [-] Guild count: {txtg}
-[-] Prefix: {Fore.LIGHTMAGENTA_EX}{config.prefix}{Style.RESET_ALL}
+[-] Prefix: {Fore.LIGHTMAGENTA_EX}{cfg.prefix}{Style.RESET_ALL}
 [-] Started at: {Fore.LIGHTMAGENTA_EX}{time.strftime('%H:%M:%S')}{Style.RESET_ALL}
 """.replace("[-]", f"[{Fore.LIGHTMAGENTA_EX}-{Style.RESET_ALL}]")
     start_time = time.time()
@@ -211,13 +242,13 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     print(Style.RESET_ALL)
     print(zamn)
     cmds = len(velt.commands)
-    if config.rpc["enabled"] == True:
-        rpc = pypresence.AioPresence("1185652637966811146")
-        buttons = config.rpc["buttons"]
+    if cfg.rpc["enabled"] == True:
+        rpc = pypresence.AioPresence(cfg.rpc["id"])
+        buttons = cfg.rpc["buttons"]
         await rpc.connect()
         prettyprint("RPC connected")
-        await rpc.update(state=config.rpc["state"] ,details=config.rpc["details"], large_image="velt", large_text="Velt", start=start_time, buttons=buttons)
-        prettyprint(f"{config.rpc['state']} | {config.rpc['details']}")
+        await rpc.update(state=cfg.rpc["state"] ,details=cfg.rpc["details"], large_image=cfg.rpc["large_image"], large_text=cfg.rpc["large_text"], start=start_time, buttons=buttons)
+        prettyprint(f"{cfg.rpc['state']} | {cfg.rpc['details']}")
     prettyprint(f"Logged in as {velt.user.name} ({Fore.LIGHTMAGENTA_EX}{velt.user.id}{Style.RESET_ALL})")
 
 @velt.event
@@ -234,19 +265,19 @@ async def on_command_error(ctx, error):
         await ctx.message.delete()
     except:
         pass
-    if config.logging == "console":
+    if cfg.logging == "console":
         prettyprint(f"{error}")
-    elif config.logging == "channel":
+    elif cfg.logging == "channel":
         await veltSend(ctx, "Error", f"{error}")
 
 @velt.event
 async def on_message_delete(message):
-    if config.log["ghostping"] == True:
+    if cfg.log["ghostping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
                 asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})"))
-    if config.log["messages"] == True:
+    if cfg.log["messages"] == True:
         msg_object = {
             "content": message.content,
             "author": message.author.name,
@@ -258,7 +289,7 @@ async def on_message_delete(message):
 
 @velt.event
 async def on_message(message):
-    if config.log["ping"] == True:
+    if cfg.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
@@ -385,7 +416,7 @@ def generate_image(title, description, footer):
 
 def spotifhelp():
     url = "https://discord.com/api/v9/users/@me/connections"
-    r = requests.get(url, headers={"Authorization": config.token})
+    r = requests.get(url, headers={"Authorization": cfg.token})
     response = r.json()
     spotify_access_token = None
     id = None
@@ -424,11 +455,12 @@ def find_song(song_name):
         return None
 
 
-async def veltSend(ctx, title, description):
-    config.check()
-    footer = config.embed["footer"]
+async def veltSend(ctx, title, description, footer=None):
+    cfg.check()
+    if footer == None:
+        footer = cfg.embed["footer"]
     mode = "image"
-    mode = config.mode
+    mode = cfg.mode
     if not ctx.guild == None:
         permissions = ctx.channel.permissions_for(ctx.guild.me)
         if not permissions.attach_files:
@@ -439,7 +471,7 @@ async def veltSend(ctx, title, description):
     if mode.lower() == "image":
         try:
             image_bytes = generate_image(title, description, footer)
-            msg = await ctx.send(file=File(image_bytes, filename="image.png"), delete_after=config.delete_after)
+            msg = await ctx.send(file=File(image_bytes, filename="image.png"), delete_after=cfg.delete_after)
             return msg
         except Exception as e:
             logging.error(f"Error sending message: {e}")
@@ -447,7 +479,7 @@ async def veltSend(ctx, title, description):
         line1 = f"[{title}]"
         line2 = f"{description}"
         line3 = f"[{footer}]"
-        msg = await ctx.send(f"```ini\n{line1}\n```\n`{line2}`\n\n```ini\n{line3}\n```", delete_after=config.delete_after)
+        msg = await ctx.send(f"```ini\n{line1}\n```\n`{line2}`\n\n```ini\n{line3}\n```", delete_after=cfg.delete_after)
         return msg
 
 # :::    ::: ::::::::::: ::::::::::: :::        
@@ -470,7 +502,7 @@ async def ping(ctx):
     r2 = r2.elapsed.total_seconds()
     r1 = round(r1 * 1000)
     r2 = round(r2 * 1000)
-    await veltSend(ctx, "Ping", f"> Velt: {ping}ms\n> Google: {r1}ms\n> Discord API: {r2}ms")
+    await veltSend(ctx, "Ping", f"Velt: {ping}ms\nGoogle: {r1}ms\nDiscord API: {r2}ms")
 
 
 def format_uptime(uptime):
@@ -482,7 +514,7 @@ def format_uptime(uptime):
 async def uptime(ctx):
     uptime_seconds = int(time.time() - start_time)
     formatted_uptime = format_uptime(uptime_seconds)
-    await veltSend(ctx, "Uptime", f"> {formatted_uptime}")
+    await veltSend(ctx, "Uptime", f"{formatted_uptime}")
 
 @velt.command(brief="utility")
 async def info(ctx):
@@ -490,8 +522,8 @@ async def info(ctx):
     await veltSend(ctx, "Info", f"""Name: {velt.user.name}
 ID: {velt.user.id}
 Uptime: {format_uptime(int(time.time() - start_time))}
-Prefix: {config.prefix}
-Mode: {config.mode}
+Prefix: {cfg.prefix}
+Mode: {cfg.mode}
 Commands: {cmds}
 """)
     
@@ -502,7 +534,7 @@ async def snipe(ctx, channel_id: int = None):
         channel_id = ctx.channel.id
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
-            await veltSend(ctx, "Snipe", f"> Author: {msg['author']}\n> Content: {msg['content']}")
+            await veltSend(ctx, "Snipe", f"Author: {msg['author']}\nContent: {msg['content']}")
             return
 
 @velt.command(brief="utility")
@@ -512,7 +544,7 @@ async def snipeall(ctx, channel_id: int = None):
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
-            msgs.append(f"> Author: {msg['author']}\n> Content: {msg['content']}")
+            msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
     if msgs:
         await veltSend(ctx, "Snipe", "\n\n".join(msgs))
             
@@ -528,26 +560,33 @@ async def snipeall(ctx, channel_id: int = None):
 
 @velt.command(brief="bot")
 async def prefix(ctx, prefix):
-    config.setk("prefix", prefix)
-    await veltSend(ctx, "Success", f"Prefix set to {prefix}")
+    cfg.setk("prefix", prefix)
+    await veltSend(ctx, "Prefix", f"Prefix set to {prefix}")
 
 
 @velt.command(brief="bot")
 async def textmode(ctx):
-    config.setk("mode", "text")
-    await veltSend(ctx, "Success", "Mode set to text")
+    cfg.setk("mode", "text")
+    await veltSend(ctx, "Textmode", "Mode set to text")
 
 
 @velt.command(brief="bot")
 async def imagemode(ctx):
-    config.setk("mode", "image")
-    await veltSend(ctx, "Success", "Mode set to image")
+    cfg.setk("mode", "image")
+    await veltSend(ctx, "Imagemode", "Mode set to image")
 
 
 @velt.command(brief="bot")
 async def restart(ctx):
     await ctx.message.delete()
     os.execv(sys.executable, ['python'] + sys.argv)
+
+@velt.command(brief="bot")
+async def config(ctx, key_path, value):
+    cfg.setk(key_path, value)
+    await veltSend(ctx, "Config", f"Set {key_path} to {value}")
+    cfg.check()
+    
 
 # :::::::::: :::    ::: ::::    ::: 
 # :+:        :+:    :+: :+:+:   :+: 
@@ -833,7 +872,7 @@ async def search(ctx, query):
         if query in name or query in description:
             matches.append((name, description, category))
     if matches:
-        command_strings = [f"> - {name}" for name, description, category in sorted(matches)]
+        command_strings = [f"- {name}" for name, description, category in sorted(matches)]
         num_pages = math.ceil(len(command_strings) / 13)
         page = 1
         start_index = (page - 1) * 13
@@ -927,11 +966,11 @@ async def help(ctx, input: str = None, page: int = 1):
     if input is None:
         category_strings = []
         for category in categories.keys():
-            category_strings.append(f"> {category}")
+            category_strings.append(f"{category}")
         success_message = "\n".join(category_strings)
         await veltSend(ctx, "Categories", success_message)
     elif input in categories:
-        command_strings = [f"> {name}" for name, description in sorted(categories[input])]
+        command_strings = [f"{name}" for name, description in sorted(categories[input])]
         num_pages = math.ceil(len(command_strings) / 13)
         if page < 1 or page > num_pages:
             await veltSend(ctx, "Error", "Invalid page number")
@@ -946,13 +985,13 @@ async def help(ctx, input: str = None, page: int = 1):
         if matches:
             command = velt.get_command(matches[0])
             success_message = f"""Command: {command.name}
-> Aliases: {', '.join(command.aliases) if command.aliases else 'No aliases'}"""
+Aliases: {', '.join(command.aliases) if command.aliases else 'No aliases'}"""
             await veltSend(ctx, "Success", success_message)
 
 @velt.command()
 async def test(ctx):
     url = "https://discord.com/api/v9/users/@me/connections"
-    r = requests.get(url, headers={"Authorization": config.token})
+    r = requests.get(url, headers={"Authorization": cfg.token})
     response = r.json()
     print(response)
     spotify_access_token = None
@@ -1003,8 +1042,8 @@ async def gbn(session: ClientSession) -> int:  # Thank you Discord-S.C.U.M
 discord.utils._get_build_number = gbn
 
 try:
-    config.check()
-    velt.run(config.token, log_handler=None)
+    cfg.check()
+    velt.run(cfg.token, log_handler=None)
 except discord.errors.LoginFailure:
     prettyprint("Invalid token. Set it below.")
-    config.setk("token", input("> "))
+    cfg.setk("token", input("> "))
