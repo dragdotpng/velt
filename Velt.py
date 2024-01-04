@@ -1013,6 +1013,14 @@ async def ban(ctx, user: discord.Member, *, reason: str = None):
     await veltSend(ctx, "ban", f"{user.name} has been banned")
 
 @velt.command(brief="moderation")
+async def unban(ctx, user: discord.User):
+    if not ctx.author.guild_permissions.ban_members:
+        await veltSend(ctx, "unban", "You do not have permission to ban members")
+        return
+    await ctx.guild.unban(user)
+    await veltSend(ctx, "unban", f"{user.name} has been unbanned")
+
+@velt.command(brief="moderation")
 async def mute(ctx, user: discord.Member, *, reason: str = None):
     if not ctx.author.guild_permissions.manage_roles:
         await veltSend(ctx, "mute", "You do not have permission to manage roles")
