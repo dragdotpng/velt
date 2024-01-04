@@ -58,7 +58,8 @@ class Config:
             "messages": True
         }
         self.protection = {
-            "gc": False
+            "gc": False,
+            "delallmessages": False
         }
         self.rpc = {
             "enabled": True,
@@ -105,7 +106,8 @@ async def yee(ctx):
         "messages:": true
     },
     "protection": {
-        "gc": false
+        "gc": false,
+        "delallmessages": false
     },
     "rpc": {
         "enabled": true,
@@ -312,6 +314,9 @@ async def on_message_delete(message):
 
 @velt.event
 async def on_message(message):
+    if cfg.protection["delallmessages"] == True:
+        if message.author == velt.user:
+            asyncio.sleep(cfg.delete_after)
     if cfg.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
@@ -983,6 +988,7 @@ async def clear(ctx, amount: int = 100):
 @velt.command(brief="moderation", aliases=["spurge", "sp"])
 async def selfpurge(ctx, amount: int = 100):
     messages = []
+    amount = amount + 1
     async for message in ctx.channel.history(limit=amount):
         if message.author == velt.user:
             messages.append(message)
