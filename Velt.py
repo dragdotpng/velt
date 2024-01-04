@@ -963,7 +963,7 @@ async def search(ctx, query):
 # ###       ###  ########  #########  
         
 
-@velt.command(brief="moderation", aliases=["fastclear"])
+@velt.command(brief="moderation", aliases=["fastclear", "fc"])
 async def fclear(ctx, channel: discord.TextChannel):
     if not ctx.author.guild_permissions.manage_channels:
         await veltSend(ctx, "fclear", "You do not have permission to manage channels")
@@ -980,7 +980,7 @@ async def clear(ctx, amount: int = 100):
         return
     await ctx.channel.purge(limit=amount)
 
-@velt.command(brief="moderation", aliases=["spurge"])
+@velt.command(brief="moderation", aliases=["spurge", "sp"])
 async def selfpurge(ctx, amount: int = 100):
     messages = []
     async for message in ctx.channel.history(limit=amount):
