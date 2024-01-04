@@ -572,22 +572,15 @@ Commands: {cmds}
     
 
 @velt.command(brief="utility")
-async def snipe(ctx, channel_id: int = None, page: int = 1):
+async def snipe(ctx, channel_id: int = None, page: int = None):
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
             msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
-    num_pages = math.ceil(len(msgs) / 13)
-    if page > num_pages or page < 1:
-        await veltSend(ctx, "Snipe", "Invalid page number")
-        return
-    start_index = (page - 1) * 13
-    end_index = start_index + 13
-    snipe_message = "\n\n".join(msgs[start_index:end_index])
-    snipe_message += f"\n\nPage {page}/{num_pages}"
-    await veltSend(ctx, "Snipe", snipe_message)
+    latest = msgs[-1]
+    await veltSend(ctx, "Snipe", latest)
 
 @velt.command(brief="utility")
 async def snipeall(ctx, channel_id: int = None, page: int = 1):
@@ -606,7 +599,6 @@ async def snipeall(ctx, channel_id: int = None, page: int = 1):
     snipeall_message = "\n\n".join(msgs[start_index:end_index])
     snipeall_message += f"\n\nPage {page}/{num_pages}"
     await veltSend(ctx, "Snipe", snipeall_message)
-            
 
 # :::::::::   ::::::::  ::::::::::: 
 # :+:    :+: :+:    :+:     :+:     
@@ -990,9 +982,13 @@ async def clear(ctx, amount: int = 100):
 
 @velt.command(brief="moderation", aliases=["spurge"])
 async def selfpurge(ctx, amount: int = 100):
-    def is_me(m):
-        return m.author == velt.user
-    await ctx.channel.purge(limit=amount, check=is_me)
+    messages = []
+    async for message in ctx.channel.history(limit=amount):
+        if message.author == velt.user:
+            messages.append(message)
+        else:
+            amount += 1
+    await ctx.channel.delete_messages(messages)
 
 @velt.command(brief="moderation")
 async def kick(ctx, user: discord.Member, *, reason: str = None):
