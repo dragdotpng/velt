@@ -3,7 +3,6 @@ import threading
 import requests
 import textwrap
 import warnings
-import datetime
 import asyncio
 import difflib
 import logging
@@ -18,20 +17,16 @@ import sys
 import os
 import re
 
-from typing import Tuple, Union, Optional, List, Dict, Any
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 if os.name == "nt":
     from win11toast import toast_async as toast
 else:
     from notify import notification
     import playsound
-from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
-from base64 import b64encode
 from discord import File
 from io import BytesIO
-from re import findall
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -293,7 +288,7 @@ def goto_message(message_id, channel_id, guild_id=None):
             url = f"discord://-/channels/@me/{channel_id}/{message_id}"
         else:
             url = f"discord://-/channels/{guild_id}/{channel_id}/{message_id}"
-        os.startfile(url)
+        os.system("explorer.exe " + url)
     else:
         pass # Fire code
     
@@ -304,7 +299,7 @@ async def on_message_delete(message):
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
+                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     if cfg.log["messages"] == True:
         msg_object = {
             "content": message.content,
@@ -321,7 +316,7 @@ async def on_message(message):
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
+                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     await velt.process_commands(message)
 
 @velt.event
@@ -474,10 +469,13 @@ def spotifhelp():
         "Authorization": f"Bearer {spotify_access_token}"
     }
     r = requests.get(url, headers=headers)
-    for device in r.json()["devices"]:
-        if device["is_active"] == True:
-            id = device["id"]
-            break
+    try:
+        for device in r.json()["devices"]:
+            if device["is_active"] == True:
+                id = device["id"]
+                break
+    except:
+        return None, None
     return id, spotify_access_token
 
 def find_song(song_name):
@@ -949,6 +947,7 @@ async def search(ctx, query):
     else:
         await veltSend(ctx, query, "No matches found")
 
+
 # ::::    ::::   ::::::::  :::::::::  
 # +:+:+: :+:+:+ :+:    :+: :+:    :+: 
 # +:+ +:+:+ +:+ +:+    +:+ +:+    +:+ 
@@ -956,6 +955,7 @@ async def search(ctx, query):
 # +#+       +#+ +#+    +#+ +#+    +#+ 
 # #+#       #+# #+#    #+# #+#    #+# 
 # ###       ###  ########  #########  
+        
 
 @velt.command(brief="moderation", aliases=["fastclear"])
 async def fclear(ctx, channel: discord.TextChannel):
