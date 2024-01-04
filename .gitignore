@@ -170,4 +170,8 @@ cython_debug/
 /dist
 /main.spec
 /main.onefile-build
-
+/velt.build
+/Velt.exe
+/Velt_original.exe
+/Velt.dist
+/Velt.onefile-build

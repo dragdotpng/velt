@@ -10,6 +10,7 @@ import logging
 import discord
 import pystyle
 import random
+
 import math
 import time
 import json
@@ -17,6 +18,7 @@ import sys
 import os
 import re
 
+from typing import Tuple, Union, Optional, List, Dict, Any
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 if os.name == "nt":
     from win11toast import toast_async as toast
@@ -26,8 +28,10 @@ else:
 from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
+from base64 import b64encode
 from discord import File
 from io import BytesIO
+from re import findall
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -57,6 +61,9 @@ class Config:
             "ghostping": True,
             "ping": True,
             "messages": True
+        }
+        self.protection = {
+            "gc": False
         }
         self.rpc = {
             "enabled": True,
@@ -102,16 +109,19 @@ async def yee(ctx):
         "ping": true,
         "messages:": true
     },
+    "protection": {
+        "gc": false
+    },
     "rpc": {
         "enabled": true,
         "id": "1185652637966811146",
         "state": "best!?",
         "name": "Velt",
-        "details": "",
+        "details": null,
         "large_image": "velt",
         "large_text": "Velt",
-        "small_image": "",
-        "small_text": "",
+        "small_image": null,
+        "small_text": null,
         "buttons": [
             {
                 "label": "Discord",
@@ -168,11 +178,10 @@ class Notif:
     def __init__(self):
         self.title = "Velt"
 
-    async def send(self, message):
+    async def send(self, message, on_click=None):
         if cfg.notify == True:
             if os.name == "nt":
-                # do nothing on dismiss
-                await toast(title=self.title, body=message, icon=os.path.abspath("assets/velt_big.png"), audio=os.path.abspath("assets/notif.wav"), app_id="Velt", on_dismissed=lambda reason: None)
+                await toast(title=self.title, body=message, icon=os.path.abspath("assets/velt_big.png"), audio=os.path.abspath("assets/notif.wav"), app_id="Velt", on_dismissed=lambda reason: None, on_click=on_click)
             else:
                 playsound.playsound(os.path.abspath("assets/notif.wav"), block=False)
                 notification(summary=self.title, message=message, timeout=5000, app_name="Velt", image=os.path.abspath("assets/velt_big.png"))
@@ -251,11 +260,11 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     print(zamn)
     cmds = len(velt.commands)
     if cfg.rpc["enabled"] == True:
-        rpc = pypresence.AioPresence(cfg.rpc["id"])
+        rpc = pypresence.AioPresence(1185652637966811146)
         buttons = cfg.rpc["buttons"]
         await rpc.connect()
         prettyprint("RPC connected")
-        await rpc.update(state=cfg.rpc["state"] ,details=cfg.rpc["details"], large_image=cfg.rpc["large_image"], large_text=cfg.rpc["large_text"], start=start_time, buttons=buttons)
+        await rpc.update(state=cfg.rpc["state"], details=cfg.rpc["details"], large_image=cfg.rpc["large_image"], large_text=cfg.rpc["large_text"], start=start_time, buttons=buttons)
         prettyprint(f"{cfg.rpc['state']} | {cfg.rpc['details']}")
     prettyprint(f"Logged in as {velt.user.name} ({Fore.LIGHTMAGENTA_EX}{velt.user.id}{Style.RESET_ALL})")
 
@@ -278,13 +287,24 @@ async def on_command_error(ctx, error):
     elif cfg.logging == "channel":
         await veltSend(ctx, "Error", f"{error}")
 
+def goto_message(message_id, channel_id, guild_id=None):
+    if os.name == "nt":
+        if guild_id == None:
+            url = f"discord://-/channels/@me/{channel_id}/{message_id}"
+        else:
+            url = f"discord://-/channels/{guild_id}/{channel_id}/{message_id}"
+        os.startfile(url)
+    else:
+        pass # Fire code
+    
+
 @velt.event
 async def on_message_delete(message):
     if cfg.log["ghostping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})"))
+                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
     if cfg.log["messages"] == True:
         msg_object = {
             "content": message.content,
@@ -301,8 +321,25 @@ async def on_message(message):
         if message.mentions:
             if message.mentions.__contains__(velt.user):
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})"))
+                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
     await velt.process_commands(message)
+
+@velt.event
+async def on_group_join(channel, user):
+    if cfg.protection["gc"] == True:
+        if user == velt.user:
+            prettyprint(f"Protection: Left group ({channel.id})")
+            await channel.leave()
+
+@velt.event
+async def on_private_channel_create(channel):
+    if cfg.protection["gc"] == True:
+        if channel.type == discord.ChannelType.group:
+            if channel.owner == velt.user:
+                pass
+            else:
+                prettyprint(f"Protection: Left group ({channel.id})")
+                await channel.leave()
 
 
 def generate_image(title, description, footer):
@@ -592,7 +629,14 @@ async def restart(ctx):
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @velt.command(brief="bot")
-async def config(ctx, key_path, value):
+async def config(ctx, key_path = None, value = None):
+    if key_path == None:
+        # send config without token
+        data = cfg.get()
+        data = json.dumps(data, indent=4)
+        data = data.replace(cfg.token, "You not get")
+        await ctx.send(f"# Config\n```json\n{data}\n```")
+        return
     cfg.setk(key_path, value)
     await veltSend(ctx, "Config", f"Set {key_path} to {value}")
     cfg.check()
@@ -613,7 +657,7 @@ async def iq(ctx, user: discord.User):
     await veltSend(ctx, "IQ", f"{user.name} has an IQ of {iq}")
 
 
-@velt.command(brief="fun")
+@velt.command(brief="fun", aliases=["penis"])
 async def dick(ctx, user: discord.User):
     size = random.randint(1,12)
     pp = "8" + "=" * size + "D"
@@ -638,6 +682,18 @@ async def dog(ctx):
     }
     r = requests.get(url, headers=headers)
     await ctx.send(r.json()[0]["url"])
+
+@velt.command(brief="fun")
+async def catfact(ctx):
+    url = "https://catfact.ninja/fact"
+    r = requests.get(url)
+    await veltSend(ctx, "catfact", r.json()["fact"])
+
+@velt.command(brief="fun")
+async def dogfact(ctx):
+    url = "https://dogapi.dog/api/v2/facts"
+    r = requests.get(url)
+    await veltSend(ctx, "dogfact", r.json()["data"][0]["attributes"]["body"])
 
 #  ::::::::  :::::::::   ::::::::  ::::::::::: ::::::::::: :::::::::: :::   ::: 
 # :+:    :+: :+:    :+: :+:    :+:     :+:         :+:     :+:        :+:   :+: 
@@ -918,6 +974,12 @@ async def clear(ctx, amount: int = 100):
         return
     await ctx.channel.purge(limit=amount)
 
+@velt.command(brief="moderation", aliases=["spurge"])
+async def selfpurge(ctx, amount: int = 100):
+    def is_me(m):
+        return m.author == velt.user
+    await ctx.channel.purge(limit=amount, check=is_me)
+
 @velt.command(brief="moderation")
 async def kick(ctx, user: discord.Member, *, reason: str = None):
     if not ctx.author.guild_permissions.kick_members:
@@ -1021,35 +1083,6 @@ async def test(ctx):
         if device["is_active"] == True:
             print(device["id"])
             break
-
-# Monkey patching...
-og = discord.utils._get_build_number
-async def gbn(session: ClientSession) -> int:  # Thank you Discord-S.C.U.M
-    """Fetches client build number"""
-    try:
-        login_page_request = await session.get('https://discord.com/login', timeout=7)
-        login_page = await login_page_request.text()
-        build_url = 'https://discord.com/assets/' + re.compile(r'assets/+([a-z0-9\.]+)\.js').findall(login_page)[-2] + '.js'
-        build_request = await session.get(build_url, timeout=7)
-        build_file = await build_request.text()
-        build_index = build_file.find('buildNumber') + 24
-        build_number_str = build_file[build_index : build_index + 6]
-
-        if build_number_str.isnumeric():
-            return int(build_number_str)
-        else:
-            # Check for 'Build Number' format
-            build_index = build_file.find('Build Number') + 25
-            build_number_str = build_file[build_index : build_index + 6]
-
-            if build_number_str.isnumeric():
-                return int(build_number_str)
-            else:
-                return 9999  # Return a default value
-    except asyncio.TimeoutError:
-        prettyprint('Could not fetch client build number. Falling back to hardcoded value...')
-        return 9999
-discord.utils._get_build_number = gbn
 
 try:
     cfg.check()
