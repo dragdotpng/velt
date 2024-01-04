@@ -572,26 +572,40 @@ Commands: {cmds}
     
 
 @velt.command(brief="utility")
-async def snipe(ctx, channel_id: int = None):
+async def snipe(ctx, channel_id: int = None, page: int = 1):
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
             msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
-    latest = msgs[-1]
-    await veltSend(ctx, "Snipe", latest)
+    num_pages = math.ceil(len(msgs) / 13)
+    if page > num_pages or page < 1:
+        await veltSend(ctx, "Snipe", "Invalid page number")
+        return
+    start_index = (page - 1) * 13
+    end_index = start_index + 13
+    snipe_message = "\n\n".join(msgs[start_index:end_index])
+    snipe_message += f"\n\nPage {page}/{num_pages}"
+    await veltSend(ctx, "Snipe", snipe_message)
 
 @velt.command(brief="utility")
-async def snipeall(ctx, channel_id: int = None):
+async def snipeall(ctx, channel_id: int = None, page: int = 1):
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
             msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
-    if msgs:
-        await veltSend(ctx, "Snipe", "\n\n".join(msgs))
+    num_pages = math.ceil(len(msgs) / 13)
+    if page > num_pages or page < 1:
+        await veltSend(ctx, "Snipe", "Invalid page number")
+        return
+    start_index = (page - 1) * 13
+    end_index = start_index + 13
+    snipeall_message = "\n\n".join(msgs[start_index:end_index])
+    snipeall_message += f"\n\nPage {page}/{num_pages}"
+    await veltSend(ctx, "Snipe", snipeall_message)
             
 
 # :::::::::   ::::::::  ::::::::::: 
