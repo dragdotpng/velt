@@ -300,6 +300,8 @@ async def on_message_delete(message):
     if cfg.log["ghostping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                if message.author == velt.user:
+                    return
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
                 asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     if cfg.log["messages"] == True:
@@ -320,6 +322,8 @@ async def on_message(message):
     if cfg.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                if message.author == velt.user:
+                    return
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
                 asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     await velt.process_commands(message)
