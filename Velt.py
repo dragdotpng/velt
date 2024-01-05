@@ -9,7 +9,7 @@ import logging
 import discord
 import pystyle
 import random
-
+import brotli
 import math
 import time
 import json
