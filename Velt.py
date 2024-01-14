@@ -710,6 +710,12 @@ async def tts(ctx, *, text):
     os.remove(filename)
 
 @velt.command(brief="fun")
+async def quote(ctx):
+    url = "https://inspirobot.me/api?generate=true"
+    r = requests.get(url)
+    await ctx.send(r.text)
+
+@velt.command(brief="fun")
 async def dog(ctx):
     url = "https://api.thedogapi.com/v1/images/search"
     keys = ["live_yL41nnFF0U8TtCuyMemFxKWWMnejHRXL9PDt1coakRYqhooZWtXXHPpVZlNEqVUC"]
