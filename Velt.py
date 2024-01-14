@@ -4,14 +4,13 @@ import requests
 import textwrap
 import warnings
 import datetime
-import secrets
 import asyncio
 import difflib
 import logging
 import discord
 import pystyle
 import random
-import base64
+
 import math
 import time
 import json
@@ -19,20 +18,16 @@ import sys
 import os
 import re
 
-from typing import Tuple, Union, Optional, List, Dict, Any
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 if os.name == "nt":
     from win11toast import toast_async as toast
 else:
     from notify import notification
     import playsound
-from aiohttp import ClientSession
 from colorama import Fore, Style
 from discord.ext import commands
-from base64 import b64encode
 from discord import File
 from io import BytesIO
-from re import findall
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -64,7 +59,8 @@ class Config:
             "messages": True
         }
         self.protection = {
-            "gc": False
+            "gc": False,
+            "delallmessages": False
         }
         self.rpc = {
             "enabled": True,
@@ -111,7 +107,8 @@ async def yee(ctx):
         "messages:": true
     },
     "protection": {
-        "gc": false
+        "gc": false,
+        "delallmessages": false
     },
     "rpc": {
         "enabled": true,
@@ -294,7 +291,7 @@ def goto_message(message_id, channel_id, guild_id=None):
             url = f"discord://-/channels/@me/{channel_id}/{message_id}"
         else:
             url = f"discord://-/channels/{guild_id}/{channel_id}/{message_id}"
-        os.startfile(url)
+        os.system("explorer.exe " + url)
     else:
         pass # Fire code
     
@@ -304,8 +301,10 @@ async def on_message_delete(message):
     if cfg.log["ghostping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                if message.author == velt.user:
+                    return
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
+                asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     if cfg.log["messages"] == True:
         msg_object = {
             "content": message.content,
@@ -318,11 +317,16 @@ async def on_message_delete(message):
 
 @velt.event
 async def on_message(message):
+    if cfg.protection["delallmessages"] == True:
+        if message.author == velt.user:
+            asyncio.sleep(cfg.delete_after)
     if cfg.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
+                if message.author == velt.user:
+                    return
                 prettyprint(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})")
-                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda: goto_message(message.id, message.channel.id, message.guild.id)))
+                asyncio.create_task(notif.send(f"{message.author.name} pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
     await velt.process_commands(message)
 
 @velt.event
@@ -475,10 +479,13 @@ def spotifhelp():
         "Authorization": f"Bearer {spotify_access_token}"
     }
     r = requests.get(url, headers=headers)
-    for device in r.json()["devices"]:
-        if device["is_active"] == True:
-            id = device["id"]
-            break
+    try:
+        for device in r.json()["devices"]:
+            if device["is_active"] == True:
+                id = device["id"]
+                break
+    except:
+        return None, None
     return id, spotify_access_token
 
 def find_song(song_name):
@@ -575,7 +582,7 @@ Commands: {cmds}
     
 
 @velt.command(brief="utility")
-async def snipe(ctx, channel_id: int = None):
+async def snipe(ctx, channel_id: int = None, page: int = None):
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
@@ -586,16 +593,22 @@ async def snipe(ctx, channel_id: int = None):
     await veltSend(ctx, "Snipe", latest)
 
 @velt.command(brief="utility")
-async def snipeall(ctx, channel_id: int = None):
+async def snipeall(ctx, channel_id: int = None, page: int = 1):
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
     for msg in deleted_messages:
         if msg["channel"] == channel_id:
             msgs.append(f"Author: {msg['author']}\nContent: {msg['content']}")
-    if msgs:
-        await veltSend(ctx, "Snipe", "\n\n".join(msgs))
-            
+    num_pages = math.ceil(len(msgs) / 13)
+    if page > num_pages or page < 1:
+        await veltSend(ctx, "Snipe", "Invalid page number")
+        return
+    start_index = (page - 1) * 13
+    end_index = start_index + 13
+    snipeall_message = "\n\n".join(msgs[start_index:end_index])
+    snipeall_message += f"\n\nPage {page}/{num_pages}"
+    await veltSend(ctx, "Snipe", snipeall_message)
 
 # :::::::::   ::::::::  ::::::::::: 
 # :+:    :+: :+:    :+:     :+:     
@@ -972,6 +985,7 @@ async def search(ctx, query):
     else:
         await veltSend(ctx, query, "No matches found")
 
+
 # ::::    ::::   ::::::::  :::::::::  
 # +:+:+: :+:+:+ :+:    :+: :+:    :+: 
 # +:+ +:+:+ +:+ +:+    +:+ +:+    +:+ 
@@ -979,8 +993,9 @@ async def search(ctx, query):
 # +#+       +#+ +#+    +#+ +#+    +#+ 
 # #+#       #+# #+#    #+# #+#    #+# 
 # ###       ###  ########  #########  
+        
 
-@velt.command(brief="moderation", aliases=["fastclear"])
+@velt.command(brief="moderation", aliases=["fastclear", "fc"])
 async def fclear(ctx, channel: discord.TextChannel):
     if not ctx.author.guild_permissions.manage_channels:
         await veltSend(ctx, "fclear", "You do not have permission to manage channels")
@@ -997,11 +1012,16 @@ async def clear(ctx, amount: int = 100):
         return
     await ctx.channel.purge(limit=amount)
 
-@velt.command(brief="moderation", aliases=["spurge"])
+@velt.command(brief="moderation", aliases=["spurge", "sp"])
 async def selfpurge(ctx, amount: int = 100):
-    def is_me(m):
-        return m.author == velt.user
-    await ctx.channel.purge(limit=amount, check=is_me)
+    messages = []
+    amount = amount + 1
+    async for message in ctx.channel.history(limit=amount):
+        if message.author == velt.user:
+            messages.append(message)
+        else:
+            amount += 1
+    await ctx.channel.delete_messages(messages)
 
 @velt.command(brief="moderation")
 async def kick(ctx, user: discord.Member, *, reason: str = None):
@@ -1018,6 +1038,14 @@ async def ban(ctx, user: discord.Member, *, reason: str = None):
         return
     await user.ban(reason=reason)
     await veltSend(ctx, "ban", f"{user.name} has been banned")
+
+@velt.command(brief="moderation")
+async def unban(ctx, user: discord.User):
+    if not ctx.author.guild_permissions.ban_members:
+        await veltSend(ctx, "unban", "You do not have permission to ban members")
+        return
+    await ctx.guild.unban(user)
+    await veltSend(ctx, "unban", f"{user.name} has been unbanned")
 
 @velt.command(brief="moderation")
 async def mute(ctx, user: discord.Member, *, reason: str = None):
