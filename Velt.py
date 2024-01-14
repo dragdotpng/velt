@@ -10,7 +10,7 @@ import logging
 import discord
 import pystyle
 import random
-
+import base64
 import math
 import time
 import json
