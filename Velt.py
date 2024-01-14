@@ -703,7 +703,7 @@ async def tts(ctx, *, text):
     data = response.json()
     audio = data['data']
     audio = base64.b64decode(audio)
-    filename = secrets.token_hex(16) + "mp3"
+    filename = secrets.token_hex(16) + ".mp3"
     with open(filename, 'wb') as f:
         f.write(audio)
     await ctx.send(file=discord.File(filename))
