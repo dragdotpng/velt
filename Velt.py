@@ -706,7 +706,7 @@ async def tts(ctx, *, text):
     filename = secrets.token_hex(16) + "mp3"
     with open(filename, 'wb') as f:
         f.write(audio)
-    await ctx.send(file=discord.File(filename)
+    await ctx.send(file=discord.File(filename))
     os.remove(filename)
 
 @velt.command(brief="fun")
