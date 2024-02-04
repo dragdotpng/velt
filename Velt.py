@@ -3,13 +3,15 @@ import threading
 import requests
 import textwrap
 import warnings
+import datetime
+import secrets
 import asyncio
 import difflib
 import logging
 import discord
 import pystyle
 import random
-import brotli
+import base64
 import math
 import time
 import json
@@ -685,6 +687,33 @@ async def cat(ctx):
     }
     r = requests.get(url, headers=headers)
     await ctx.send(r.json()[0]["url"])
+
+@velt.command(brief="fun")
+async def tts(ctx, *, text):
+    headers = {
+        'Content-Type': 'application/json',
+    }
+
+    json_data = {
+        'text': text,
+        'voice': 'en_us_001',
+    }
+
+    response = requests.post('https://tiktok-tts.weilnet.workers.dev/api/generation', headers=headers, json=json_data)
+    data = response.json()
+    audio = data['data']
+    audio = base64.b64decode(audio)
+    filename = secrets.token_hex(16) + ".mp3"
+    with open(filename, 'wb') as f:
+        f.write(audio)
+    await ctx.send(file=discord.File(filename))
+    os.remove(filename)
+
+@velt.command(brief="fun")
+async def quote(ctx):
+    url = "https://inspirobot.me/api?generate=true"
+    r = requests.get(url)
+    await ctx.send(r.text)
 
 @velt.command(brief="fun")
 async def dog(ctx):
