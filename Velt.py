@@ -479,8 +479,7 @@ def find_song(song_name):
 
 async def veltSend(ctx, title, description, footer=None):
     cfg.check()
-    if footer == None:
-        footer = cfg.embed["footer"]
+    footer = cfg.embed["footer"] + " | " + footer if footer != None else cfg.embed["footer"]
     mode = "image"
     mode = cfg.mode
     if not ctx.guild == None:
@@ -576,8 +575,7 @@ async def snipeall(ctx, channel_id: int = None, page: int = 1):
     start_index = (page - 1) * 13
     end_index = start_index + 13
     snipeall_message = "\n\n".join(msgs[start_index:end_index])
-    snipeall_message += f"\n\nPage {page}/{num_pages}"
-    await veltSend(ctx, "Snipe", snipeall_message)
+    await veltSend(ctx, "Snipe", snipeall_message, f"Page {page}/{num_pages}")
 
 # :::::::::   ::::::::  ::::::::::: 
 # :+:    :+: :+:    :+:     :+:     
@@ -954,8 +952,7 @@ async def search(ctx, query):
         start_index = (page - 1) * 13
         end_index = start_index + 13
         success_message = "\n".join(command_strings[start_index:end_index])
-        success_message += f"\n\nPage {page}/{num_pages}"
-        await veltSend(ctx, query, success_message)
+        await veltSend(ctx, query, success_message, f"Page {page}/{num_pages}")
     else:
         await veltSend(ctx, query, "No matches found")
 
@@ -1075,8 +1072,7 @@ async def help(ctx, input: str = None, page: int = 1):
         start_index = (page - 1) * 13
         end_index = start_index + 13
         success_message = "\n".join(command_strings[start_index:end_index])
-        success_message += f"\n\nPage {page}/{num_pages}"
-        await veltSend(ctx, "Commands", success_message)
+        await veltSend(ctx, "Commands", success_message, f"Page {page}/{num_pages}")
     else:
         matches = difflib.get_close_matches(input, [command[0] for command in commands])
         if matches:
