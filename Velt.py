@@ -531,7 +531,7 @@ async def veltSend(ctx, title, description, footer=None):
         line1 = f"[{title}]"
         line2 = f"{description}"
         line3 = f"[{footer}]"
-        msg = await ctx.send(f"```ini\n{line1}\n```\n`{line2}`\n\n```ini\n{line3}\n```", delete_after=cfg.delete_after)
+        msg = await ctx.send(f"""```ini\n{line1}\n```\n`{line2}`\n\n```ini\n{line3}\n```""", delete_after=cfg.delete_after)
         return msg
 
 # :::    ::: ::::::::::: ::::::::::: :::        
