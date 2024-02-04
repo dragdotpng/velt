@@ -258,7 +258,6 @@ S..SS SSSSS S..SS       S..SS       `:S:' S..SS `:S:'
     print(pystyle.Center.XCenter(banner))
     print(Style.RESET_ALL)
     print(zamn)
-    cmds = len(velt.commands)
     if cfg.rpc["enabled"] == True:
         rpc = pypresence.AioPresence(1185652637966811146)
         buttons = cfg.rpc["buttons"]
@@ -322,6 +321,7 @@ async def on_message(message):
     if cfg.protection["delallmessages"] == True:
         if message.author == velt.user:
             asyncio.sleep(cfg.delete_after)
+            await message.delete()
     if cfg.log["ping"] == True:
         if message.mentions:
             if message.mentions.__contains__(velt.user):
@@ -402,17 +402,45 @@ def generate_image(title, description, footer):
     description_font = ImageFont.truetype("assets/Metropolis-Regular.otf", 30)
     footer_font = ImageFont.truetype("assets/Metropolis-SemiBoldItalic.otf", 25)
 
+    def draw_wrapped_text(image, draw, font, text, pos, col):
+        margin, offset = pos
+        max_width = image.width - 2*margin
+        lines = []
+
+        paragraphs = text.split("\n")
+
+        for paragraph in paragraphs:
+            words = paragraph.split(' ')
+
+            current_line = words.pop(0)
+
+            for word in words:
+                if draw.textlength(' '.join([current_line, word]), font=font) <= max_width:
+                    current_line = ' '.join([current_line, word])
+                else:
+                    lines.append(current_line)
+                    current_line = word
+
+            lines.append(current_line)
+
+        for line in lines:
+            draw.text((margin, offset), line, font=font, fill=col)
+            left, top, right, bottom = font.getbbox("line")
+            _, height = right - left, bottom - top
+            offset += height + 10
+
+        return image
+
     def draw_title(draw, text):
-        draw.text((20, 20), text, font=title_font, fill="white")
+        draw_wrapped_text(image, draw, title_font, text, (20, 20), "white")
 
     def draw_description(draw, text):
-        draw.text((20, 70), text, font=description_font, fill="white")
+        draw_wrapped_text(image, draw, description_font, text, (20, 100), "white")
 
     def draw_footer(draw, text):
-        draw.text((20, 465), text, font=footer_font, fill="grey")
+        draw_wrapped_text(image, draw, footer_font, text, (20, 470), "grey")
 
     def draw_line(draw, color, xy):
-        # draw a line on the left side of the image
         draw.line(
             xy,
             fill=color,
@@ -984,7 +1012,7 @@ async def clear(ctx, amount: int = 100):
     await ctx.channel.purge(limit=amount)
 
 @velt.command(brief="moderation", aliases=["spurge", "sp"])
-async def selfpurge(ctx, amount: int = 100):
+async def selfpurge(ctx, amount: int = 15):
     messages = []
     amount = amount + 1
     async for message in ctx.channel.history(limit=amount):
@@ -992,7 +1020,7 @@ async def selfpurge(ctx, amount: int = 100):
             messages.append(message)
         else:
             amount += 1
-    await ctx.channel.delete_messages(messages)
+    await ctx.channel.purge(limit=amount, check=lambda m: m.author == velt.user)
 
 @velt.command(brief="moderation")
 async def kick(ctx, user: discord.Member, *, reason: str = None):
@@ -1048,6 +1076,7 @@ async def unmute(ctx, user: discord.Member, *, reason: str = None):
 async def help(ctx, input: str = None, page: int = 1):
     commands = [(command.name, command.description, command.brief) for command in velt.walk_commands() if
                 command.brief is not None]
+    cmds = len(velt.commands)
     categories = {}
     for name, description, category in commands:
         category = category.lower() if category is not None else category
@@ -1062,7 +1091,7 @@ async def help(ctx, input: str = None, page: int = 1):
         for category in categories.keys():
             category_strings.append(f"{category}")
         success_message = "\n".join(category_strings)
-        await veltSend(ctx, "Categories", success_message)
+        await veltSend(ctx, "Categories", success_message, f"{cmds} commands")
     elif input in categories:
         command_strings = [f"{name}" for name, description in sorted(categories[input])]
         num_pages = math.ceil(len(command_strings) / 13)
