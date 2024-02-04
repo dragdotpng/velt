@@ -192,7 +192,8 @@ def downloadAssets():
         "https://raw.githubusercontent.com/VeltBot/assets/main/icon.ico",
         "https://raw.githubusercontent.com/VeltBot/assets/main/notif.wav",
         "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-Regular.otf",
-        "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-Bold.otf"
+        "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-Bold.otf",
+        "https://raw.githubusercontent.com/VeltBot/assets/main/Metropolis-SemiBoldItalic.otf"
     ]
     for asset in assets:
         name = asset.split("/")[-1]
@@ -349,121 +350,88 @@ async def on_private_channel_create(channel):
 
 
 def generate_image(title, description, footer):
-    colors = {
-        'text': (255, 255, 255),
-        'background': (25,25,25),
-        'primary': (255,188,207),
-        'secondary': (10, 10, 10),
-        'accent': (158, 41, 74)
-    }
+    def round_rectangle(draw, xy, corner_radius, fill=None, outline=None):
+        upper_left_point = xy[0]
+        bottom_right_point = xy[1]
+        draw.rectangle(
+            [
+                (upper_left_point[0], upper_left_point[1] + corner_radius),
+                (bottom_right_point[0], bottom_right_point[1] - corner_radius)
+            ],
+            fill=fill,
+            outline=fill
+        )
+        draw.rectangle(
+            [
+                (upper_left_point[0] + corner_radius, upper_left_point[1]),
+                (bottom_right_point[0] - corner_radius, bottom_right_point[1])
+            ],
+            fill=fill,
+            outline=fill
+        )
+        draw.pieslice(
+            [upper_left_point, (upper_left_point[0] + corner_radius * 2, upper_left_point[1] + corner_radius * 2)],
+            180,
+            270,
+            fill=fill,
+            outline=fill
+        )
+        draw.pieslice(
+            [(bottom_right_point[0] - corner_radius * 2, bottom_right_point[1] - corner_radius * 2), bottom_right_point],
+            0,
+            90,
+            fill=fill,
+            outline=fill
+        )
+        draw.pieslice(
+            [(upper_left_point[0], bottom_right_point[1] - corner_radius * 2), (upper_left_point[0] + corner_radius * 2, bottom_right_point[1])],
+            90,
+            180,
+            fill=fill,
+            outline=fill
+        )
+        draw.pieslice(
+            [(bottom_right_point[0] - corner_radius * 2, upper_left_point[1]), (bottom_right_point[0], upper_left_point[1] + corner_radius * 2)],
+            270,
+            360,
+            fill=fill,
+            outline=fill
+        )
 
-    image_width = 750
-    image_height = 850
-    title_padding = 35
-    description_padding = 6.5
-    footer_padding = 20
-    corner_radius = 50
+    title_font = ImageFont.truetype("assets/Metropolis-Bold.otf", 40)
+    description_font = ImageFont.truetype("assets/Metropolis-Regular.otf", 30)
+    footer_font = ImageFont.truetype("assets/Metropolis-SemiBoldItalic.otf", 25)
 
-    image = Image.new('RGB', (image_width, image_height), colors['background'])
-    draw = ImageDraw.Draw(image)
+    def draw_title(draw, text):
+        draw.text((20, 20), text, font=title_font, fill="white")
 
-    title_font_size = int(image_width * 0.089)
-    title_font = ImageFont.truetype(f'assets/Metropolis-Bold.otf', title_font_size)
+    def draw_description(draw, text):
+        draw.text((20, 70), text, font=description_font, fill="white")
 
-    description_font_size = int(image_width * 0.0515)
-    description_font = ImageFont.truetype(f'assets/Metropolis-Regular.otf', description_font_size)
+    def draw_footer(draw, text):
+        draw.text((20, 465), text, font=footer_font, fill="grey")
 
-    footer_font_size = int(image_width * 0.06)
-    footer_font = ImageFont.truetype(f'assets/Metropolis-Bold.otf', footer_font_size)
-    footer_width, footer_height = draw.textsize(footer, font=footer_font)
-
-    description_lines = []
-    for line in description.split('\n'):
-        description_lines.extend(textwrap.wrap(line, width=35))
-
-    title_height = draw.textsize(title, font=title_font)[1]
-    footer_height = footer_font_size + footer_padding
-    description_height = sum(draw.textsize(line, font=description_font)[1] for line in description_lines)
-
-    available_height = image_height - title_height - footer_height - 6 * title_padding
-
-    if description_height > available_height:
-        description_font_size = int(description_font_size * available_height / description_height)
-        description_font = ImageFont.truetype('assets/Metropolis-Regular.otf', description_font_size)
-
-    description_start_y = title_height + 3 * title_padding
-
-    title_x = title_padding
-    title_y = title_padding
-    title_width, title_height = draw.textsize(title, font=title_font)
-
-    title_background_color = (50, 50, 50)
-    rectangle_padding = int(image_width * 0.03)
-    rectangle_x1 = title_x - rectangle_padding
-    rectangle_y1 = title_y - rectangle_padding
-    rectangle_x2 = title_x + title_width + rectangle_padding
-    rectangle_y2 = title_y + title_height + rectangle_padding
-
-    title_background_color = (50, 50, 50)
-    draw.rounded_rectangle(
-        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
-        fill=title_background_color,
-        radius=corner_radius
-    )
-
-    draw.text((title_x, title_y), title, font=title_font, fill=colors['text'])
-
-    description_x = title_padding
-    description_y = title_height + 3 * title_padding
-    description_width = image_width - 2 * title_padding
-
-    description_height = sum(draw.textsize(line, font=description_font)[1] + description_padding for line in description_lines)
-
-    rectangle_padding = int(image_width * 0.025)
-    rectangle_x1 = description_x - rectangle_padding
-    rectangle_y1 = description_y - rectangle_padding
-    rectangle_x2 = description_x + description_width + rectangle_padding
-    rectangle_y2 = description_y + description_height + rectangle_padding
-
-    description_background_color = (50, 50, 50)
-    draw.rounded_rectangle(
-        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
-        fill=description_background_color,
-        radius=corner_radius
-    )
-
-    for line in description_lines:
-        draw.text((description_x, description_start_y), line, font=description_font, fill=colors['text'])
-        description_start_y += draw.textsize(line, font=description_font)[1] + description_padding
-
-    footer_x = title_padding
-    footer_y = image_height - footer_height - footer_padding
-    footer_width = image_width - 2 * title_padding
-    footer_text_height = draw.textsize(footer, font=footer_font)[1]
-
-    rectangle_padding = int(image_width * 0.03)
-    rectangle_x1 = footer_x - rectangle_padding
-    rectangle_y1 = footer_y - rectangle_padding
-    rectangle_x2 = footer_x + footer_width + rectangle_padding
-    rectangle_y2 = footer_y + footer_text_height + rectangle_padding
+    def draw_line(draw, color, xy):
+        # draw a line on the left side of the image
+        draw.line(
+            xy,
+            fill=color,
+            width=8
+        )
     
-    footer_background_color = (50, 50, 50)
-    draw.rounded_rectangle(
-        [(rectangle_x1, rectangle_y1), (rectangle_x2, rectangle_y2)],
-        fill=footer_background_color,
-        radius=corner_radius
-    )
-
-    draw.text((footer_x, footer_y), footer, font=footer_font, fill=colors['text'])
-
-    mask = Image.new('L', image.size, 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.rounded_rectangle((0, 0, image_width, image_height), fill=255, radius=corner_radius)
-    image.putalpha(mask)
+    image = Image.new("RGB", (600, 500), (32, 34, 37))
+    draw = ImageDraw.Draw(image)
+    #round_rectangle(draw, [(15, 65), (550, 450)], 20, fill=(54, 57, 63)) spent so long and it looks ass xddd
+    draw_title(draw, title)
+    draw_description(draw, description)
+    draw_footer(draw, footer)
+    draw_line(draw, "purple", [(0, 0), (0, 500)])
     image_bytes = BytesIO()
-    image.save(image_bytes, format='PNG')
+    image.save(image_bytes, format="PNG")
     image_bytes.seek(0)
     return image_bytes
+
+    
 
 def spotifhelp():
     url = "https://discord.com/api/v9/users/@me/connections"
