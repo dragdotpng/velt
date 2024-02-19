@@ -306,15 +306,15 @@ async def on_message_delete(message):
                     return
                 prettyprint(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})")
                 asyncio.create_task(notif.send(f"{message.author.name} ghost pinged you in {message.guild.name} ({message.guild.id})", lambda *args: goto_message(message.id, message.channel.id, message.guild.id)))
-    if cfg.log["messages"] == True:
-        msg_object = {
-            "content": message.content,
-            "author": message.author.name,
-            "channel": message.channel.id,
-            #"guild": message.guild.id
-        }
-        global deleted_messages
-        deleted_messages.append(msg_object)
+
+    msg_object = {
+        "content": message.content,
+        "author": message.author.name,
+        "channel": message.channel.id,
+        #"guild": message.guild.id
+    }
+    global deleted_messages
+    deleted_messages.append(msg_object)
 
 @velt.event
 async def on_message(message):
@@ -579,6 +579,7 @@ Commands: {cmds}
 
 @velt.command(brief="utility")
 async def snipe(ctx, channel_id: int = None, page: int = None):
+    global deleted_messages
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
@@ -590,6 +591,7 @@ async def snipe(ctx, channel_id: int = None, page: int = None):
 
 @velt.command(brief="utility")
 async def snipeall(ctx, channel_id: int = None, page: int = 1):
+    global deleted_messages
     if channel_id == None:
         channel_id = ctx.channel.id
     msgs = []
@@ -1020,7 +1022,12 @@ async def selfpurge(ctx, amount: int = 15):
             messages.append(message)
         else:
             amount += 1
-    await ctx.channel.purge(limit=amount, check=lambda m: m.author == velt.user)
+    # check if channel is not groupchannel
+    if ctx.channel.type == discord.ChannelType.group:
+        for message in messages:
+            await message.delete(delay=0.5)
+    else:
+        await ctx.channel.purge(limit=amount, check=lambda m: m.author == velt.user, delay=0.5)
 
 @velt.command(brief="moderation")
 async def kick(ctx, user: discord.Member, *, reason: str = None):
