@@ -1,2 +1,2 @@
 # Velt
-Gyatt selfbot.
+skided nob selfbob
